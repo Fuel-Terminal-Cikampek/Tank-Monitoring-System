@@ -1,0 +1,446 @@
+@model TMS.Models.TankTicket
+
+@{
+    ViewData["Title"] = "AddTankTicket";
+    Layout = null;
+}
+<script>
+    var date01;
+    var date02;
+    var time01;
+    var time02;
+    var tankID = '@Model.Tank_Id';
+
+    // Custom filtering function which will search data in column four between two values
+
+    $(document).ready(function () {
+        // Create date inputs
+        date01 = new DateTime($('#date01'), {
+            format: 'D MMM YYYY'
+        });
+
+        date02 = new DateTime($('#date02'), {
+            format: 'D MMM YYYY'
+        });
+        time01 = new DateTime($('#time01'), {
+            format: 'HH:mm'
+        });
+        time02 = new DateTime($('#time02'), {
+            format: 'HH:mm'
+        });
+        
+        // ? TAMBAHAN: Auto-reload data ketika tanggal/waktu berubah
+        $('#date01, #time01').on('change', function() {
+            loadDataOpen();
+        });
+        
+        $('#date02, #time02').on('change', function() {
+            loadDataClose();
+        });
+        
+        // Load initial data
+        loadData();
+    });
+    //get data Tank by Id
+    function loadData() {
+        var id = document.getElementById("Tank_Id").value;
+        var Method = 'Automatic';//document.getElementById("Measurement_Method").value;
+        var time = '@DateTime.Now.ToString("d MMM yyyy HH:mm:ss")';
+        if (id != 0) {
+            GetData(id, Method, time);
+        }
+    }
+
+    //get data open Tank by Id
+    function loadDataOpen() {
+        var id = document.getElementById("Tank_Id").value;
+        var Method = "Automatic";
+        
+        // ? PERBAIKAN: Format waktu dengan benar untuk parsing di server
+        var dateValue = document.getElementById("date01").value;
+        var timeValue = document.getElementById("time01").value;
+        
+        // Gabungkan dan format ulang ke format yang bisa di-parse server
+        // Format: "dd MMM yyyy HH:mm"
+        var timerequest = dateValue + ' ' + timeValue + ':00';
+        
+        if (id != 0 && id != "" && dateValue && timeValue) {
+            GetDataOpen(id, Method, timerequest);
+        }
+    }
+
+    //get data close Tank by Id
+    function loadDataClose() {
+        var id = document.getElementById("Tank_Id").value;
+        var Method = "Automatic";
+        var timerequest = document.getElementById("date02").value + ' ' +document.getElementById("time02").value;
+        if (id != 0) {
+            GetDataClose(id, Method, timerequest);
+        }
+    }
+
+    // Collect data from forms and send to controller
+    function SaveChanges() {
+        var form1 = $('#form1').serializeArray();
+        var form2 = $('#form2').serializeArray();
+        var form3 = $('#form3').serializeArray();
+        // Check if tankId is not filled
+        if ($('#Tank_Id').val() == "0") {
+            alert("Harap Inputkan Nomor Tanki");
+            return; // Stop further execution
+        }
+
+        // Check if tankId is not filled
+        if ($('#Operation_Type').val() == "--All Operation Type--") {
+            alert("Harap Inputkan Tipe Operasi");
+            return; // Stop further execution
+        }
+
+        // Convert each form data to object
+        var formData1 = {};
+        form1.forEach(function (item) {
+            formData1[item.name] = item.value;
+        });
+
+        var formData2 = {};
+        form2.forEach(function (item) {
+            formData2[item.name] = item.value;
+        });
+
+        var formData3 = {};
+        form3.forEach(function (item) {
+            formData3[item.name] = item.value;
+        });
+
+        // Add checkbox value to formData2
+        var checkStatusOpen = $('#CheckStatusOpen');
+        formData2[checkStatusOpen.attr('id')] = checkStatusOpen.is(':checked') ? '1' : '2';
+
+        // Add checkbox value to formData3
+        var checkStatusClose = $('#CheckStatusClose');
+        formData3[checkStatusClose.attr('id')] = checkStatusClose.is(':checked') ? '1' : '2';
+
+        // Combine all form data into a single object
+        var formsData = {
+            form1: formData1,
+            OpenFormData: formData2,
+            CloseFormData: formData3
+        };
+
+
+        $.ajax({
+            url: '@Url.Action("AddOpenCloseTankTicket", "TankTicket")',
+            type: 'POST',
+            data: JSON.stringify(formsData),
+            contentType: 'application/json; charset=utf-8',
+            success: function (response) {
+                // Handle success
+                $("#form-modal").modal('hide');
+                oTable.ajax.reload(null, false);
+            },
+            error: function (xhr, status, error) {
+                // Handle error
+            }
+        });
+    }
+
+    function SaveAndPost() {
+        var form1 = $('#form1').serializeArray();
+        var form2 = $('#form2').serializeArray();
+        var form3 = $('#form3').serializeArray();
+
+        // Check if tankId is not filled
+        if ($('#Tank_Id').val() == "0") {
+            alert("Harap Inputkan Nomor Tanki");
+            return; // Stop further execution
+        }
+
+        // Check if tankId is not filled
+        if ($('#Operation_Type').val() == "--All Operation Type--") {
+            alert("Harap Inputkan Tipe Operasi");
+            return; // Stop further execution
+        }
+
+        // Convert each form data to object
+        var formData1 = {};
+        form1.forEach(function (item) {
+            formData1[item.name] = item.value;
+        });
+
+        // Tambahkan IsPosting ke formData1
+        formData1['IsPosting'] = '1';
+
+        console.log("Form Data 1")
+
+
+        var formData2 = {};
+        form2.forEach(function (item) {
+            formData2[item.name] = item.value;
+        });
+
+        var formData3 = {};
+        form3.forEach(function (item) {
+            formData3[item.name] = item.value;
+        });
+
+
+        // Add checkbox value to formData2
+        var checkStatusOpen = $('#CheckStatusOpen');
+        formData2[checkStatusOpen.attr('id')] = checkStatusOpen.is(':checked') ? '1' : '2';
+
+        // Add checkbox value to formData3
+        var checkStatusClose = $('#CheckStatusClose');
+        formData3[checkStatusClose.attr('id')] = checkStatusClose.is(':checked') ? '1' : '2';
+
+        // Combine all form data into a single object
+        var formsData = {
+            form1: formData1,
+            OpenFormData: formData2,
+            CloseFormData: formData3
+        };
+
+
+        $.ajax({
+            url: '@Url.Action("AddOpenCloseTankTicket", "TankTicket")',
+            type: 'POST',
+            data: JSON.stringify(formsData),
+            contentType: 'application/json; charset=utf-8',
+            success: function (response) {
+                // Handle success
+                if (response.isValid == true) {
+                    $("#form-modal").modal('hide');
+                    oTable.ajax.reload(null, false);
+                }
+                else {
+                    alert(response.message)
+                }
+            },
+            error: function (xhr, status, error) {
+                // Handle error
+            }
+        });
+    }
+
+</script>
+
+
+<style>
+    .form-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Dua kolom dengan ukuran yang sama */
+        gap: 10px; /* Jarak antara kolom */
+    }
+
+    .bordered-form {
+        border: 1px solid #ccc; /* Tambahkan border dengan warna abu-abu */
+        padding: 20px; /* Berikan sedikit padding untuk memberikan ruang antara konten dan border */
+        border-radius: 5px; /* Agar tampilan border terlihat lebih lembut */
+    }
+
+    .large-checkbox .form-check-input {
+        width: 1.5em;
+        height: 1.5em;
+    }
+</style>
+
+
+<form id="form1" asp-route-id="@Model.Id" onsubmit="" autocomplete="off" style="font-size:1.25rem; color:black;font-weight:600;">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Tank_Id" />
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Tank_Id" class="control-label"></label>
+            <input disabled asp-for="tank.Tank_Name" class="form-control" />
+            <span asp-validation-for="Tank_Id" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="Shipment_Id" class="control-label"></label>
+            <input asp-for="Shipment_Id" class="form-control" />
+            <span asp-validation-for="Shipment_Id" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Operation_Type" class="control-label"></label>
+            <select asp-for="Operation_Type" class="custom-select" asp-items=@(new SelectList(ViewBag.Operation,"Value","Text"))>
+            </select>
+            <span asp-validation-for="Operation_Type" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="Do_Number" class="control-label"></label>
+            <input asp-for="Do_Number" class="form-control" />
+            <span asp-validation-for="Do_Number" class="text-danger"></span>
+        </div>
+    </div>
+
+</form>
+
+<div class="form-container" style="font-size:1.25rem; color:black;font-weight:800;">
+    <form id="form2" asp-action="AddOrEdit" asp-route-id="@Model.Id" onsubmit="return jQueryAjaxPost(this);" autocomplete="off" class="bordered-form">
+        <input type="hidden" asp-for="Id" />
+        <div class="form-group">
+            <div class="form-check large-checkbox row ml-1">
+                <input class="form-check-input col-md-3" type="checkbox" value="1" id="CheckStatusOpen">
+                <label class="form-check-label col-md-9 ml-lg-5 mt-2" for="CheckStatusOpen">
+                    OPEN
+                </label>
+            </div>
+        </div>
+       
+        <div class="form-group">
+            <label class="control-label">DATE</label>
+            <input asp-for="Timestamp" type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="date01" value="@DateTime.Now.ToString("dd MMM yyyy")" />
+            <span asp-validation-for="Timestamp" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label class="control-label">TIME</label>
+            <div class="row">
+                <div class="col-md-9">
+                    <input type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="time01" style="width:90%" value="@DateTime.Now.ToString("HH:mm")" />
+                    <span asp-validation-for="Timestamp" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <a onclick="loadDataOpen()" class="btn btn-success btn-circle">
+                        <i class="fas fa-refresh"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        @*<div class="form-group">
+            <label asp-for="Measurement_Method" class="control-label">Method</label>
+            <select onchange="loadDataOpen();" id="methodOpen" asp-for="Measurement_Method" class="custom-select">
+                <option selected>Choose...</option>
+                <option value="Automatic">Automatic</option>
+                <option value="Manual">Manual</option>
+            </select>
+            <span asp-validation-for="Measurement_Method" class="text-danger"></span>
+        </div>*@
+
+        <div class="form-group">
+            <label asp-for="LiquidLevel" class="control-label"></label>
+            <input id="levelOpen" asp-for="LiquidLevel" class="form-control" />
+            <span asp-validation-for="LiquidLevel" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="WaterLevel" class="control-label"></label>
+            <input id="waterOpen" asp-for="WaterLevel" class="form-control" />
+            <span asp-validation-for="WaterLevel" class="text-danger"></span>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-sm-6 mb-3 mb-sm-0">
+                <label asp-for="LiquidTemperature" class="control-label"></label>
+                <input id="temperatureOpen" asp-for="LiquidTemperature" class="form-control" />
+                <span asp-validation-for="LiquidTemperature" class="text-danger"></span>
+            </div>
+
+            <div class="col-sm-6 mb-sm-0">
+                <label asp-for="TestTemperature" class="control-label"></label>
+                <input id="testTemperatureOpen" asp-for="TestTemperature" class="form-control" />
+                <span asp-validation-for="TestTemperature" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="LiquidDensity" class="control-label">Density</label>
+            <input id="densityOpen" asp-for="LiquidDensity" class="form-control" />
+            <span asp-validation-for="LiquidDensity" class="text-danger"></span>
+        </div>
+
+    </form>
+
+    <form id="form3" asp-route-id="@Model.Id" onsubmit="" autocomplete="off" class="bordered-form">
+        <input type="hidden" asp-for="Id" />
+        <div class="form-group">
+            <div class="form-check large-checkbox row ml-1">
+                <input class="form-check-input col-md-3" type="checkbox" value="1" id="CheckStatusOpen">
+                <label class="form-check-label col-md-9 ml-lg-5 mt-2" for="CheckStatusOpen">
+                    CLOSE
+                </label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label">DATE</label>
+            <input asp-for="Timestamp" type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="date02" value="@DateTime.Now.ToString("dd MMM yyyy")" />
+            <span asp-validation-for="Timestamp" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label class="control-label">TIME</label>
+            <div class="row">
+                <div class="col-md-9">
+                    <input type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="time02" style="width:90%" value="@DateTime.Now.ToString("HH:mm")" />
+                    <span asp-validation-for="Timestamp" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <a onclick="loadDataClose()" class="btn btn-success btn-circle">
+                        <i class="fas fa-refresh"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        @*<div class="form-group">
+            <label asp-for="Measurement_Method" class="control-label">Method</label>
+            <select onchange="loadDataClose();" id="methodClose" asp-for="Measurement_Method" class="custom-select">
+                <option selected>Choose...</option>
+                <option value="Automatic">Automatic</option>
+                <option value="Manual">Manual</option>
+            </select>
+            <span asp-validation-for="Measurement_Method" class="text-danger"></span>
+        </div>*@
+
+        <div class="form-group">
+            <label asp-for="LiquidLevel" class="control-label"></label>
+            <input id="levelClose" asp-for="LiquidLevel" class="form-control" />
+            <span asp-validation-for="LiquidLevel" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="WaterLevel" class="control-label"></label>
+            <input id="waterClose" asp-for="WaterLevel" class="form-control" />
+            <span asp-validation-for="WaterLevel" class="text-danger"></span>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-sm-6 mb-3 mb-sm-0">
+                <label asp-for="LiquidTemperature" class="control-label"></label>
+                <input id="temperatureClose" asp-for="LiquidTemperature" class="form-control" />
+                <span asp-validation-for="LiquidTemperature" class="text-danger"></span>
+            </div>
+            <div class="col-sm-6 mb-sm-0">
+                <label asp-for="TestTemperature" class="control-label"></label>
+                <input id="testTemperatureClose" asp-for="TestTemperature" class="form-control" />
+                <span asp-validation-for="TestTemperature" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="LiquidDensity" class="control-label">Density</label>
+            <input id="densityClose" asp-for="LiquidDensity" class="form-control" />
+            <span asp-validation-for="LiquidDensity" class="text-danger"></span>
+        </div>
+
+    </form>
+
+</div>
+
+<div class="form-group col text-center" style="margin-top: 30px;">
+    <div class="row">
+        <div class="col-md-6">
+            <button type="button" id="bt-save" onclick="SaveAndPost()" class="btn btn-primary" style="font-size: 1.25rem; width:90%">Save and Posting</button>
+        </div>
+        <div class="col-md-6">
+            <button type="button" onclick="SaveChanges()" class="btn btn-success" style="font-size: 1.25rem; width:90%">Save changes</button>
+        </div>
+    </div>
+    
+    
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

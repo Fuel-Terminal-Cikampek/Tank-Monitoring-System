@@ -1,0 +1,45 @@
+@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+<!-- FontAwesome -->
+<script src="~/assets/vendor/fontawesome-free-6.5.2-web/js/all.min.js"></script>
+
+<!-- ✅ jQuery (minified version) -->
+<script type="text/javascript" src="~/assets/vendor/jquery/jquery.min.js"></script>
+
+<!-- Bootstrap Bundle (includes Popper.js) -->
+<script type="text/javascript" src="~/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<!-- jQuery Easing -->
+<script type="text/javascript" src="~/assets/vendor/jquery-easing/jquery.easing.min.js"></script>
+
+<!-- Custom scripts for SB Admin 2 -->
+<script type="text/javascript" src="~/assets/js/sb-admin-2.min.js"></script>
+<script type="text/javascript" src="~/assets/js/site.js?v=20260120"></script>
+
+<!-- DataTables Plugins -->
+<script type="text/javascript" src="~/assets/vendor/datatables/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="~/assets/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+<script type="text/javascript" src="~/assets/vendor/datatables/dataTables.dateTime.min.js"></script>
+<script type="text/javascript" src="~/assets/vendor/datatables/moment.min.js"></script>
+
+<script type="text/javascript">
+    // ✅ SAFEGUARD: Pastikan $ selalu merujuk ke jQuery
+    // Browser DevTools kadang override $ dengan document.querySelector
+    (function() {
+        // Store jQuery reference
+        var jQ = window.jQuery;
+
+        // Force $ to be jQuery
+        window.$ = jQ;
+
+        // Log confirmation
+
+        // Re-assign $ after short delay (in case something overwrites it)
+        setTimeout(function() {
+            if (window.$ !== window.jQuery) {
+                window.$ = window.jQuery;
+            }
+        }, 100);
+    })();
+</script>

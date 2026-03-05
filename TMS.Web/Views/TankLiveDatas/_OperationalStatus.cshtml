@@ -1,0 +1,207 @@
+@model TMS.Web.Models.TankSafetyOperation
+
+<div class="container-fluid p-3">
+    <form id="operationalStatusForm">
+        <input type="hidden" name="TankName" id="currentTankName" value="@Model.TankName" />
+        
+        <!-- Tank Name + Threshold Button -->
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label font-weight-bold">Tank Name</label>
+            <div class="col-sm-5">
+                <input type="text" class="form-control" value="@Model.TankName" readonly />
+            </div>
+            <div class="col-sm-3">
+                <!-- ✅ THRESHOLD BUTTON -->
+                <button type="button" class="btn btn-warning btn-block" onclick="openThresholdModal('@Model.TankName')">
+                    <i class="fas fa-sliders-h"></i> Threshold
+                </button>
+            </div>
+        </div>
+        
+        <!-- Operation Type -->
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label font-weight-bold">Operation Type</label>
+            <div class="col-sm-8">
+                @{
+                    var operationType = Model.OperationType ?? "";
+                }
+                <select name="OperationType" id="operationType" class="form-control">
+                    <option value="">-- Pilih Operation --</option>
+                    <option value="STANDBY">Standby / Idle</option>
+                    <option value="RECEIVING">Receiving</option>
+                    <option value="SALES">Sales</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- ✅ Target Level - Hanya tampil untuk RECEIVING/SALES -->
+        <div class="form-group row" id="targetLevelGroup" style="display: none;">
+            <label class="col-sm-4 col-form-label font-weight-bold">Target Level (mm)</label>
+            <div class="col-sm-8">
+                <input type="number" name="TargetLevel" id="targetLevel" class="form-control" 
+                       value="@(Model.TargetLevel ?? (int)Model.MaxLevel)" min="0" max="15000" />
+                <small class="text-muted">Safe Capacity: @Model.MaxLevel mm</small>
+            </div>
+        </div>
+        
+        <!-- ✅ Stagnant Threshold - Untuk RECEIVING dan SALES -->
+        <div class="form-group row" id="stagnantGroup" style="display: none;">
+            <label class="col-sm-4 col-form-label font-weight-bold">Stagnant Threshold (menit)</label>
+            <div class="col-sm-8">
+                <input type="number" name="StagnantThresholdMinutes" id="stagnantThreshold" class="form-control" 
+                       value="@(Model.StagnantThresholdMinutes ?? 5)" min="1" max="60" />
+                <small class="text-muted">Alarm jika flowrate 0 selama N menit</small>
+            </div>
+        </div>
+        
+        <!-- ✅ Disable Operation Alarm - semua tangki -->
+        <div class="form-group row" id="disableAlarmGroup">
+            <label class="col-sm-4 col-form-label font-weight-bold">Operation Alarm</label>
+            <div class="col-sm-8">
+                <div class="custom-control custom-switch">
+                    @if (Model.DisableOperationAlarm)
+                    {
+                        <input type="checkbox" class="custom-control-input" id="disableOperationAlarm" name="DisableOperationAlarm" checked="checked" />
+                    }
+                    else
+                    {
+
+                        <input type="checkbox" class="custom-control-input" id="disableOperationAlarm" name="DisableOperationAlarm" />
+                    }
+            <label class="custom-control-label" for="disableOperationAlarm">
+                <span id="alarmStatusLabel" class="text-danger font-weight-bold">Alarm NONAKTIF</span>
+                </label>
+                </div> 
+                <small class="text-warning d-block mt-1"> 
+                    <i class="fas fa-exclamation-triangle">
+
+                    </i> Jika dinonaktifkan, alarm operation tidak akan berbunyi untuk tangki ini. </small>
+            </div>
+        </div>
+        
+        <!-- Description -->
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label font-weight-bold">Description</label>
+            <div class="col-sm-8">
+                <textarea name="Desc" id="descriptionField" class="form-control" rows="3">@Model.Desc</textarea>
+            </div>
+        </div>
+        
+        <!-- Buttons -->
+        <div class="form-group row mt-4">
+            <div class="col-sm-12 text-right">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    Close
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveOperationalStatus()">
+                    <i class="fas fa-save mr-1"></i>Update Status
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    jQuery(document).ready(function($) {
+        // ✅ Set initial selected value via JavaScript
+        var initialOperationType = '@Model.OperationType';
+        if (initialOperationType) {
+            $('#operationType').val(initialOperationType);
+        }
+        
+        // ✅ Update alarm status label
+        updateAlarmStatusLabel();
+        
+        // Show/hide fields based on operation type
+        $('#operationType').on('change', function() {
+            var opType = $(this).val();
+            
+            if (opType === 'RECEIVING') {
+                $('#targetLevelGroup').show();
+                $('#stagnantGroup').show();
+            } else if (opType === 'SALES') {
+                $('#targetLevelGroup').show();
+                $('#stagnantGroup').show();
+            } else {
+                $('#targetLevelGroup').hide();
+                $('#stagnantGroup').hide();
+            }
+        });
+        
+        // ✅ Toggle alarm status label
+        $('#disableOperationAlarm').on('change', function() {
+            updateAlarmStatusLabel();
+        });
+        
+        // Trigger change on load to set initial visibility
+        $('#operationType').trigger('change');
+    });
+    
+    function updateAlarmStatusLabel() {
+        var $ = jQuery;
+        var isDisabled = $('#disableOperationAlarm').is(':checked');
+        var label = $('#alarmStatusLabel');
+        
+        if (isDisabled) {
+            label.text('Alarm NONAKTIF').removeClass('text-success').addClass('text-danger');
+        } else {
+            label.text('Alarm AKTIF').removeClass('text-danger').addClass('text-success');
+        }
+    }
+    
+    // ✅ FIX: Open Threshold Modal - pass tankName untuk back navigation
+    function openThresholdModal(tankName) {
+        var $ = jQuery;
+        
+        $.ajax({
+            url: '/TankLiveDatas/GetAlarmSettings',
+            type: 'GET',
+            data: { tankName: tankName },
+            success: function(res) {
+                // ✅ Replace content in current modal (tidak tutup modal)
+                $('#form-modal .modal-body').html(res);
+                $('#form-modal .modal-title').text('Alarm Threshold Settings');
+            },
+            error: function(xhr, status, error) {
+                alert('Error loading threshold settings: ' + error);
+            }
+        });
+    }
+    
+    function saveOperationalStatus() {
+        var $ = jQuery;
+        var form = $('#operationalStatusForm');
+        var formData = form.serialize();
+        
+        // Add checkbox value explicitly (unchecked checkbox not sent in form)
+        if ($('#disableOperationAlarm').length > 0) {
+            // Remove any existing DisableOperationAlarm from formData
+            formData = formData.replace(/&?DisableOperationAlarm=[^&]*/g, '');
+            // Add the correct value
+            formData += '&DisableOperationAlarm=' + ($('#disableOperationAlarm').is(':checked') ? 'true' : 'false');
+        }
+        
+        $.ajax({
+            url: '/TankLiveDatas/SaveOperationalStatus',
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    alert('✅ ' + response.message);
+                    $('#form-modal').modal('hide');
+                    // Reload data if available
+                    if (typeof loadTankData === 'function') {
+                        loadTankData();
+                    } else if (typeof location !== 'undefined') {
+                        location.reload();
+                    }
+                } else {
+                    alert('❌ Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('❌ Error: ' + error);
+            }
+        });
+    }
+</script>

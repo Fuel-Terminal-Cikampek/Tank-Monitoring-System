@@ -1,0 +1,526 @@
+@model TMS.Models.RequestEstimated
+@{
+    ViewData["Title"] = "Tank Monitoring";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+}
+<head>
+    @section Scripts{
+        <script type="text/javascript">
+            // Get polling interval from server (from appsettings.json)
+            var pollingIntervalMs = @ViewBag.PollingIntervalMs;
+
+
+            var oTable;
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                oTable = $('#tb-tanklivedata').DataTable({
+                    "serverSide": true, // for process server side
+                    "scrollY": true,
+                    "scrollX": true,
+                    "autoWidth": false,
+                    "scrollCollapse": true,
+                    "paging": true,
+                    "fixedColumns": true,
+                    "processing": false,
+                    "pageLength": 50,
+                    "ajax": {
+                        "url": "@Url.Action("LoadData")",
+                        "type": "POST",
+                        "datatype": "json",
+                        "dataSrc": function(json) {
+                            return json.data;
+                        }
+                    },
+                    "columnDefs": [{
+                        "targets": 0,
+                        "visible": false,
+                        "searchable": false
+                    },
+                        { "targets": 1, orderable: false, "width": "2%" },
+                        { "targets": 12, orderable: false, "width": "2%" },
+                        { "targets": 13, orderable: false, "width": "2%" },
+                        { "targets": 14, orderable: false, "width": "2%" },
+                        { "targets": 15, orderable: false, "width": "2%" },
+                        { "targets": '_all', orderable: false, "width": "10%" }
+                    ],
+                    "columns": [
+                        { "data": "Tank_Name", "name": "Tank_Name"},
+                        { "data": "Tank_Name", "name": "Tank_Name" },
+                        {
+                            "data": "Product_Name",
+                            render: function (data, type, full, meta) {
+                                var bgColor = full.HexColor || '#28a745'; // Default green if null
+                                return '<span class="badge badge-success" style="width: 100%; height:100%; font-size:1.25rem;font-weight:600;background-color:'+bgColor+';">' + data + '</span>';
+
+                            },
+                        "name": "Product_Name"
+                        },
+                        {
+                            "data": "Tank_Name",
+                            render: function (data, type, full, meta) {
+                                var label = full.OperationLabel || 'IDLE';
+                                var btnClass = 'btn-secondary'; // Default for IDLE
+                                if (label === 'RECEIVING') btnClass = 'btn-success';
+                                else if (label === 'SALES') btnClass = 'btn-danger';
+                                else if (label === 'OPEN') btnClass = 'btn-warning';
+                                
+                                return "<button title='Update Status' type='button' class='btn " + btnClass + " btn-icon' style='width: 100%;font-size:1.25rem;font-weight:600;' onclick=OpenOperationalStatus('" + data + "');><i class='fas fa-cogs'></i> " + label + "</button>";
+                            }
+                        },
+                        {
+                            "data": "LiquidLevel",
+                            render: function (data, type) {
+                                if (data == null) return '0';
+                                return parseFloat(data.toFixed(0)).toLocaleString();
+                            },
+                            "name": "LiquidLevel"
+                        },
+                        {
+                            "data": "WaterLevel",
+                            render: function (data, type) {
+                                if (data == null) return '0';
+                                return data.toFixed(0);
+                            },
+                            "name": "WaterLevel"
+                        },
+                        {
+                            "data": "LiquidTemperature",
+                            render: function (data, type) {
+                                if (data == null) return '0.00';
+                                return data.toFixed(2);
+                            },
+                            "name": "LiquidTemperature"
+                        },
+                        {
+                            "data": "ManualTestTemp",
+                            render: function (data, type) {
+                                if (data == null) return '0.00';
+                                return data.toFixed(2);
+                            },
+                            "name": "ManualTestTemp"
+                        },
+                        {
+                            "data": "LiquidDensity",
+                            render: function (data, type) {
+                                if (data == null) return '0.000';
+                                return data.toFixed(3);
+                            },
+                            "name": "LiquidDensity"
+                        },
+                        {
+                            "data": "Volume",
+                            render: function (data, type, row, meta) {
+                                if (data == null) return '0';
+                                // Volume is already in correct unit from backend - display as-is
+                                var volumeValue = parseFloat(data);
+
+                                return Math.round(volumeValue).toLocaleString('en-US');
+                            },
+                            "name": "Volume"
+                        },
+                        {
+                            "data": "Pumpable",
+                            render: function (data, type) {
+                                if (data == null) return '0';
+                                // Pumpable is already in correct unit - display as integer with thousand separator
+                                var pumpableValue = parseFloat(data);
+                                return Math.round(pumpableValue).toLocaleString('en-US');
+                            },
+                            "name": "pumpable"
+                        },
+                        {
+                            "data": "Ullage",
+                            render: function (data, type) {
+                                if (data == null) return '0';
+                                // Ullage is already in correct unit - display as integer with thousand separator
+                                var ullageValue = parseFloat(data);
+                                return Math.round(ullageValue).toLocaleString('en-US');
+                            },
+                            "name": "ullage"
+                        },
+                        {
+                            "data": "FlowRateKLperH",
+                            render: function (data, type, row, meta) {
+                                // LOGGING: Log FlowRateKLperH column rendering
+                                if (meta.row < 3) {
+                                    console.log(`[COL RENDER] Row ${meta.row} (${row.Tank_Name}) - Column "FlowRateKLperH" (index ${meta.col})`);
+                                }
+
+                                // Format FlowRate with 2 decimal places (e.g., 0.00, 123.45) - konsisten dengan Dashboard
+                                var flowrateValue = (data == null) ? 0 : parseFloat(data);
+                                var flowrate = flowrateValue.toLocaleString('en-US', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
+
+                                if (meta.row < 3) {
+                                }
+
+                                return flowrate;
+                            },
+                            "name": "FlowRateKLperH"
+                        },
+                        {
+                            "data": "FlowRateKLperH",
+                            render: function (data, type) {
+                                if (data == null || data == 0) {
+                                    return "";
+                                }
+                                else if (data > 0) {
+                                    return '<img src="assets/img/arrow-up-green.png" class="img-fluid" style="width:50%;  visibility=hidden" alt="t">';
+                                }
+                                else if (data < 0) {
+                                    return '<img src="assets/img/arrow-down-red.png" class="img-fluid" style="width:50%;  visibility=hidden" alt="t">';
+                                }
+                                else {
+                                    return "";
+                                }
+                            },
+                            "name": "FlowRateKLperH"
+                        },
+                         {
+                            "data": "Status",
+                            "render": function (data, type) {
+                                // Status from TankLiveData: NORMAL (green) / ALARM (red)
+                                if (data == "ALARM") {
+                                    return '<span class="badge badge-danger" style="width: 100%;font-size:1.25rem;font-weight:600; height:100%;">ALARM</span>';
+                                }
+                                else {
+                                    return '<span class="badge badge-success" style="width: 100%;font-size:1.25rem;font-weight:600; height:100%;">NORMAL</span>';
+                                }
+                            },
+                             "name": "Status"
+                        },
+                        {
+                            "data": null,
+
+                            render: function (data, type, full, meta) {
+                                return "<button title='Tank Posting' type='button' class='btn btn-success btn-icon' style='width: 150px;font-size:1.25rem;font-weight:600;' onclick=CreateTankTicket('" + full.tank_Name + "');><i class='fas fa-upload'></i> POSTING</button>";
+                            }
+                        },
+                        //,
+                        //{
+                        //    "data": "timeStamp",
+                        //    "render": function (value) {
+                        //        if (value === null) return "";
+                        //        return moment(value).format('DD MMM YYYY HH:mm:ss');
+                        //    },
+
+                        //    "name": "TimeStamp", "autoWidth": true
+                        //}
+                    ]
+                });
+
+                // Use dynamic polling interval from appsettings.json
+                setInterval(reloadTable, pollingIntervalMs);
+                // Create date inputs
+                dateAndTime = new DateTime($('#time-counter'), {
+                    format: 'HH:mm:ss'
+                });
+                $('#modal-time').on('hidden.bs.modal', function () {
+                    clearInterval(intervalModal);
+                });
+            }); //end document ready
+             //update data tank ticket
+                function CreateTankTicket(Id) {
+                    var toSend =
+                    {
+                        id: Id
+                    };
+                    $.ajax({
+                        type: "GET",
+                        contentType: "application/json; charset=utf-8",
+                        url: "@Url.Action("AddTankTicket", "TankLiveDatas")",
+                        data: toSend,
+                        success: function (res) {
+                            $("#form-modal .modal-body").html(res);
+                            $("#form-modal .modal-title").html('Edit Tank Ticket');
+                            $("#form-modal").modal('show');
+                        },
+                        error: function (res) {
+                        }
+                    })
+                }
+
+            function reloadTable() {
+                oTable.ajax.reload(null, false);
+            }
+            var intervalModal;
+
+            function ShowModal() {
+                $("#modal-time").modal('show');
+                //RequestModal();
+                // Use same polling interval for modal
+                intervalModal = setInterval(RequestModal, pollingIntervalMs);
+            }
+            function RequestModal() {
+                $.ajax({
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "@Url.Action("CalculationView","TankLiveDatas")",
+                    success: function (res) {
+                        $("#modal-time .modal-footer").html(res);
+                    },
+                    error: function (err) {
+                    }
+                })
+            }
+            // ---- Tank Ticket '
+            function GetData(Id, Method, Timerequest) {
+                 var toSend =
+                 {
+                     id: Id,
+                     timerequest: Timerequest
+                };
+                 $.ajax({
+                     type: 'POST',
+                     url: "@Url.Action("GetData","TankTicket")",
+                     data: toSend,
+                     success: function (result) {
+                         setDataOpen('Automatic', result);
+                         setDataClose('Automatic', result);
+
+                     },
+                     error: function (err) {
+                     }
+                 })
+             }
+             // GET DATA OPEN TANK TICKET
+             function GetDataOpen(Id, method, Timerequest) {
+                 var toSend =
+                 {
+                     id: Id,
+                     timerequest: Timerequest
+                 };
+                 $.ajax({
+                     type: 'POST',
+                     url: '@Url.Action("GetLiveDataForForm","TankTicket")', // ? CHANGED
+                     data: toSend,
+                     success: function (result) {
+                         setDataOpen(method, result);
+
+                     },
+                     error: function (err) {
+                     }
+                 })
+             }
+
+             // GET DATA CLOSE TANK TICKET
+             function GetDataClose(Id, method, Timerequest) {
+                 var toSend =
+                 {
+                     id: Id,
+                     timerequest: Timerequest
+                 };
+                 $.ajax({
+                     type: 'POST',
+                     url: '@Url.Action("GetLiveDataForForm", "TankTicket")', // ? CHANGED
+                     data: toSend,
+                     success: function (result) {
+                         setDataClose(method, result);
+
+                     },
+                     error: function (err) {
+                     }
+                 })
+            }
+           
+            // SETDATA OPEN
+            function setDataOpen(method, result) {
+                if (method == "Automatic") {
+                    document.getElementById("levelOpen").value = parseFloat(result.liquidLevel).toFixed(0);
+                    document.getElementById("waterOpen").value = parseFloat(result.waterLevel).toFixed(0);
+                    document.getElementById("temperatureOpen").value = parseFloat(result.liquidTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("testTemperatureOpen").value = parseFloat(result.testTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("densityOpen").value = parseFloat(result.liquidDensity).toFixed(3).replace(',', '.');
+                }
+                else {
+                    document.getElementById("levelOpen").value = parseFloat(0);
+                    document.getElementById("waterOpen").value = parseFloat(0);
+                    document.getElementById("temperatureOpen").value = parseFloat(2);
+                    document.getElementById("testTemperatureOpen").value = parseFloat(2);
+                    document.getElementById("densityOpen").value = parseFloat(3);
+                }
+            }
+
+            // SETDATA CLOSE
+            function setDataClose(method, result) {
+                if (method == "Automatic") {
+                    document.getElementById("levelClose").value = parseFloat(result.liquidLevel).toFixed(0);
+                    document.getElementById("waterClose").value = parseFloat(result.waterLevel).toFixed(0);
+                    document.getElementById("temperatureClose").value = parseFloat(result.liquidTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("testTemperatureClose").value = parseFloat(result.testTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("densityClose").value = parseFloat(result.liquidDensity).toFixed(3).replace(',', '.');
+                }
+                else {
+                    document.getElementById("levelClose").value = parseFloat(0);
+                    document.getElementById("waterClose").value = parseFloat(0);
+                    document.getElementById("temperatureClose").value = parseFloat(2);
+                    document.getElementById("testTemperatureClose").value = parseFloat(2);
+                    document.getElementById("densityClose").value = parseFloat(3);
+                }
+            }
+
+            // OPEN OPERATIONAL STATUS MODAL
+            function OpenOperationalStatus(tankName) {
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetOperationalStatus", "TankLiveDatas")?tankName=" + tankName,
+                    success: function (res) {
+                        $("#form-modal .modal-body").html(res);
+                        $("#form-modal .modal-title").html('Update Operational Status');
+                        $("#form-modal").modal('show');
+                    },
+                    error: function (err) {
+                        alert("Error loading status form");
+                    }
+                });
+            }
+
+        </script>
+
+        <script>
+            function reset() {
+                document.getElementById("product").value = "";
+                document.getElementById("tank-name").value = "";
+
+                location.reload()
+            }
+
+            function RequestEstimation() {
+                /*var RequestEstimated = {
+                    TankId: document.querySelector("#dt-tank").value,
+                    Height: document.querySelector("#dt-height").value,
+                    Status: document.querySelector("#dt-status").value//,
+                    //Time: document.querySelector("#time-counter").value
+                };
+                var request = JSON.stringify(RequestEstimated);*/
+                var request = $("#requetEstimated").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("RequestEstimation")",
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                    data: request,
+                    success: function (res) {
+                        alert(res);
+                    },
+                    error: function (res) {
+                    }
+                })
+            }
+        </script>
+    }
+
+</head>
+<!-- Begin Page Content -->
+<div class="container-fluid">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Tank Monitoring</h1>
+        <a value="reload" onclick="reloadTable()" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
+            <i class="fas fa-redo-alt"></i>
+        </a>
+    </div>
+
+    <!-- Submain Content -->
+    <div class="card shadow-lg rounded">
+        <div class="card-header bg-gradient-info"></div>
+        <div class="card-body">
+            <!-- Tank Filter -->
+            <form>
+                <div class="form-row">
+                    <div class="col-md-2">
+                    </div>
+                    <div class="col-md-2">
+                    </div>
+                    <div class="col-md-2">
+                    </div>
+                    <div class="col-md-2">
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group mb-1">
+                            <button type="button" onclick="location.href='@Url.Action("Index","Tanks")'" class="btn btn-outline-dark" style="width: 100%;">TANK CONFIGURATION</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <!-- End Tank Filter -->
+            <!-- Divider -->
+            <hr class="sidebar-divider my-3">
+            <!-- Tank Table -->
+            @await Html.PartialAsync("_ViewAll", Model)
+            <!-- End Tank table -->
+        </div>
+    </div>
+    <!-- End Submain Content -->
+
+</div>
+<!-- End Page Content -->
+<div class="modal fade bd-example-modal-lg" id="modal-time" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    Estimation Time
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="requetEstimated" novalidate>
+                    <div class="form-group row">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <label asp-for="Tank_Name" class="control-label"></label>
+                            <select asp-for="Tank_Name" id="dt-tank" class="custom-select" asp-items=@(new SelectList(ViewBag.TankId,"Tank_Name","Tank_Name"))></select>
+                        </div>
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <label asp-for="Height" class="control-label"></label>
+                            <input type="text" asp-for="Height" id="dt-height" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <label asp-for="Status" class="control-label"></label>
+                            <select asp-for="Status" id="dt-status" class="custom-select">
+                                <option selected>Choose...</option>
+                                <option value="1">RECEIVING</option>
+                                <option value="2">SALES</option>
+                                <option value="0">STANDBY</option>
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <label asp-for="Time" class="control-label"></label>
+                            <input type="text" id="time-counter" asp-for="Time" class="form-control" aria-label="Date-time" aria-describedby="date-time" />
+                            <span asp-validation-for="Time" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-group text-lg-right">
+                        <button onclick="RequestEstimation()" type="button" class="btn btn-success">UPDATE</button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Tank Operation Modal -->
+<div class="modal fade" id="form-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Update Operational Status</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>

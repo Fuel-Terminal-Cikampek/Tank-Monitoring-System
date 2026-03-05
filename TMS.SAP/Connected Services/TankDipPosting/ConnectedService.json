@@ -1,0 +1,18 @@
+{
+  "ExtendedData": {
+    "inputs": [
+      "http://10.1.32.98/IADMS/zmm_tankdip_delivery.asmx"
+    ],
+    "collectionTypes": [
+      "System.Array",
+      "System.Collections.Generic.Dictionary`2"
+    ],
+    "messageContract": true,
+    "namespaceMappings": [
+      "*, TankDipPosting"
+    ],
+    "sync": true,
+    "targetFramework": "net6.0",
+    "typeReuseMode": "All"
+  }
+}

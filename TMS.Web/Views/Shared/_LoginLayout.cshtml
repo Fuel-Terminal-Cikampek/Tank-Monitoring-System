@@ -1,0 +1,32 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - </title>
+    <link rel="icon" href="~/assets/img/citia-logo.webp">
+    <partial name="_Styles" />
+</head>
+
+<body class="bg-gradient-primary">
+    <div class="container">
+        @RenderBody()
+    </div>
+
+    <footer class="sticky-footer text-light">
+        <div class="container my-auto">
+            <div class="copyright text-center my-auto">
+                <span>Copyright &copy; <a href="https://citia-engineering.com/" class="text-gray-400">Citia Engineering Indonesia</a></span>
+            </div>
+        </div>
+    </footer>
+
+    <partial name="_Scripts" />
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

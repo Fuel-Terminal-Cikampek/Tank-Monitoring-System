@@ -1,0 +1,71 @@
+﻿@model TMS.Models.WebServiceConfiguration
+
+@{
+    ViewData["Title"] = "AddOrEdit";
+    Layout = null;
+}
+
+
+<div class="row">
+    <div class="col-md-12">
+        <form id="form" asp-action="AddOrEdit" asp-action="AddOrEdit" asp-route-id="@Model.Id" onsubmit="return jQueryAjaxPost(this);" autocomplete="off">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <!--begin::Input group-->
+            <div class="row g-9 mb-8">
+                <!--begin::Col-->
+                <div class="col-md-6 fv-row">
+                    <label asp-for="ServiceName" class="control-label d-flex align-items-center fs-5 fw-semibold mb-2"></label>
+                    <input asp-for="ServiceName" class="form-control form-control-lg form-control-solid" placeholder="Enter Service Name" />
+                    <span asp-validation-for="ServiceName" class="text-danger"></span>
+                </div>
+                <!--end::Col-->
+                <!--begin::Col-->
+
+                <div class="form-group fv-row mb-10 col-md-6">
+                    <label asp-for="Status" class="control-label d-flex align-items-center fs-5 fw-semibold mb-2"></label>
+                    <select asp-for="Status" class="form-control form-control-lg form-control-solid">
+                        <option value=true>Active</option>
+                        <option value=false>InActive</option>
+                    </select>
+                    <span asp-validation-for="Status" class="text-danger"></span>
+                </div>
+
+            </div>
+            <div class="form-group fv-row mb-10">
+                <label asp-for="URL" class="control-label d-flex align-items-center fs-5 fw-semibold mb-2"></label>
+                <textarea asp-for="URL" class="form-control form-control-solid" rows="3"></textarea>
+                <span asp-validation-for="URL" class="text-danger"></span>
+            </div>
+            <!--begin::Input group-->
+            <div class="row g-9 mb-8">
+                <!--begin::Col-->
+                <div class="col-md-6 fv-row mb-10">
+                    <label asp-for="Username" class="control-label d-flex align-items-center fs-5 fw-semibold mb-2"></label>
+                    <input asp-for="Username" class="form-control form-control-lg form-control-solid" placeholder="Enter Username" />
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
+                <!--end::Col-->
+                <!--begin::Col-->
+                <div class="col-md-6 fv-row">
+                    <label asp-for="Password" class="control-label d-flex align-items-center fs-5 fw-semibold mb-2"></label>
+                    <input asp-for="Password" class="form-control form-control-lg form-control-solid" placeholder="Enter Password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-group col text-center">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">Discard</button>
+                    <button type="submit" class="btn btn-success">Save changes</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

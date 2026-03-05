@@ -1,0 +1,73 @@
+@model TMS.Web.Models.LoginViewModel
+@{
+    Layout = "~/Views/Shared/_LoginLayout.cshtml";
+    ViewData["Title"] = "Log in";
+}
+
+<!-- Outer Row -->
+<div class="row justify-content-center align-items-center">
+
+    <div class="col-xl-5 col-lg-6 col-md-8 col-sm-10 col-10">
+
+        <div class="card o-hidden border-0 shadow-lg my-5">
+            <div class="card-body p-0">
+                <!-- Nested Row within Card Body -->
+                <div class="p-5">
+                    <div class="text-center">
+                        <i class="fas fa-hard-hat fa-3x mb-0 text-gray-800"></i>
+                        <h1 class="h5 mb-4 font-weight-bold text-gray-800">Tank Management System</h1>
+                    </div>
+
+                    <section>
+                        <form method="post" asp-controller="Account" asp-action="Login" asp-route-returnurl="@ViewData["ReturnUrl"]" style="padding:10px;">
+                            @Html.AntiForgeryToken()
+
+                            @if (ViewData.ModelState.ErrorCount > 0)
+                            {
+                                <div asp-validation-summary="All" class="text-danger"></div>
+                            }
+
+                            <hr />
+                            <div class="input-group mb-3">
+                                <input asp-for="Username" class="form-control" placeholder="Username" autofocus required>
+                                <div class="input-group-append">
+                                    <div class="input-group-text">
+                                        <span class="fas fa-envelope"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group mb-3">
+                                <input asp-for="Password" class="form-control" placeholder="Password" type="password" required>
+                                <div class="input-group-append">
+                                    <div class="input-group-text">
+                                        <span class="fas fa-lock"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox">
+                                    <label asp-for="RememberMe">
+                                        <input asp-for="RememberMe" />
+                                        Ingatkan saya?
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-block btn-primary">Log in</button>
+                            </div>
+                        </form>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+}

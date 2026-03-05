@@ -1,0 +1,289 @@
+@model TMS.Models.TankHistorical
+@{
+    ViewData["Title"] = "Tank Historical";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+}
+<head>
+    @section Scripts{
+        <script type="text/javascript">
+            var oTable;
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                oTable = $('#tb-tankhistorical').DataTable({
+                    "serverSide": true, // for process server side
+                    "scrollY": true,
+                    "scrollX": true,
+                    "autoWidth": false,
+                    "scrollCollapse": true,
+                    "paging": true,
+                    "fixedColumns": true,
+                    "processing": true,
+                    language: {
+                        processing: '<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>'
+                    },
+                    dom: '<"top"f>rt<"bottom"ilp><"clear">',
+                    "order": [[3, "desc"], [0, "asc"]],
+                    "pageLength": 50,
+
+                    "ajax": {
+                        "url": "@Url.Action("LoadData")",
+                        "type": "POST",
+                        "datatype": "json",
+                        "data": function (d) {
+                            d.TankNameFilter = document.getElementById("tank-name").value;
+                            d.DateFrom = document.getElementById("min").value;
+                            d.DateTo = document.getElementById("max").value;
+                            d.TimeFilter = document.getElementById("date-Filter").value;
+                        },
+                        "dataSrc": function (json) {
+                            if (json.data && json.data.length > 0) {
+                            }
+                            return json.data;
+                        }
+                    },
+                    "columns": [
+                        { "data": "Tank_Name", "name": "Tank_Name", "autoWidth": true },
+                        { "data": "Product_Name", "name": "Product_Name", "autoWidth": true },
+                        {
+                            "data": "TimeStamp",
+                            "render": function (value) {
+                                if (value === null) return "";
+                                return moment(value).format('DD MMM YYYY HH:mm:ss');
+                            },
+
+                            "name": "TimeStamp", "autoWidth": true
+                        },
+                        {
+                            "data": "LiquidLevel",
+                            render: function (data, type) {
+                                return data.toFixed(0);
+                            },
+                            "name": "LiquidLevel", "autoWidth": true
+                        },
+                        {
+                            "data": "WaterLevel",
+                            render: function (data, type) {
+                                return data.toFixed(0);
+                            },
+                            "name": "WaterLevel", "autoWidth": true
+                        },
+                        {
+                            "data": "LiquidTemperature",
+                            render: function (data, type) {
+                                return data.toFixed(2);
+                            },
+                            "name": "LiquidTemperature", "autoWidth": true
+                        },
+                        {
+                            "data": "TestTemperature",
+                            render: function (data, type) {
+                                return data.toFixed(2);
+                            },
+                            "name": "TestTemperature", "autoWidth": true
+                        },
+                        {
+                            "data": "LiquidDensity",
+                            render: function (data, type) {
+                                return data.toFixed(3);
+                            },
+                            "name": "LiquidDensity", "autoWidth": true
+                        },
+                        {
+                            "data": "Volume",
+                            render: function (data, type) {
+                                if (data == null) return '0';
+                                return Math.round(parseFloat(data)).toLocaleString('en-US');
+                            },
+                            "name": "Volume", "autoWidth": true
+                        },
+                        {
+                            "data": "PumpPamble",
+                            render: function (data, type) {
+                                if (data == null) return '0';
+                                return Math.round(parseFloat(data)).toLocaleString('en-US');
+                            },
+                            "name": "PumpPamble", "autoWidth": true
+                        },
+                        {
+                            "data": "Ullage",
+                            render: function (data, type) {
+                                if (data == null) return '0';
+                                return Math.round(parseFloat(data)).toLocaleString('en-US');
+                            },
+                            "name": "Ullage", "autoWidth": true
+                        },
+                        {
+                            "data": "FlowRateKLperH",
+                            render: function (data, type) {
+                                if (data == null) return '0';
+                                return Math.round(parseFloat(data)).toLocaleString('en-US');
+                            },
+                            "name": "FlowRateKLperH", "autoWidth": true
+                        },
+                        { "data": "Status", "name": "Status", "autoWidth": true },
+                    ]
+                });
+                //setInterval(reloadTable, 2000);
+            }); //end document ready
+            function reloadTable() {
+                oTable.ajax.reload(null, false);
+            }
+            function reset() {
+                document.getElementById("min").value = "";
+                document.getElementById("max").value = "";
+                document.getElementById("tank").value = "";
+                reloadTable();
+            }
+            function ExportExcel() {
+                var dateFromValue = document.getElementById("min").value;
+                var dateToValue = document.getElementById("max").value;
+
+                // Parse and convert to ISO format for proper server-side parsing
+                var dateFrom = moment(dateFromValue, 'D MMMM yyyy HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
+                var dateTo = moment(dateToValue, 'D MMMM yyyy HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
+
+                var datarequest =
+                {
+                    TankNameFilter: document.getElementById("tank-name").value,
+                    DateFrom : dateFrom,
+                    DateTo : dateTo,
+                    TimeFilter : document.getElementById("date-Filter").value
+                };
+                $.ajax({
+                    url: '@Url.Action("ExportExcel", "TankHistorical")',
+                    data: datarequest,
+                    method: 'POST',
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (response, status, xhr) {
+                        // Get filename from Content-Disposition header or create default
+                        var filename = "Tank Historical.xls";
+                        var disposition = xhr.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('filename=') !== -1) {
+                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            var matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        } else {
+                            // Create filename from current filter values
+                            var dateFrom = document.getElementById("min").value;
+                            var dateTo = document.getElementById("max").value;
+                            var tankFilter = document.getElementById("tank-name").value;
+                            var tankName = (tankFilter && !tankFilter.includes("----")) ? tankFilter : "All Tanks";
+                            filename = "Tank Historical " + tankName + " " + dateFrom + " to " + dateTo + ".xls";
+                        }
+
+                        // Create a hidden link to download the file
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(new Blob([response]));
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle the error
+                    }
+                });
+            }
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                // Create date inputs
+                minDate = new DateTime($('#min'), {
+                    format: 'D MMMM yyyy HH:mm:ss'
+                });
+                maxDate = new DateTime($('#max'), {
+                    format: 'D MMMM yyyy HH:mm:ss'
+                });
+            });
+        </script>
+    }
+
+</head>
+<!-- Begin Page Content -->
+<div class="container-fluid">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Tank Historical</h1>
+        <a value="reload" onclick="reloadTable()" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
+            <i class="fas fa-redo-alt"></i>
+        </a>
+    </div>
+
+    <!-- Submain Content -->
+    <div class="card shadow-lg rounded">
+        <div class="card-header bg-gradient-info"></div>
+        <div class="card-body">
+            <!-- Tank Filter -->
+            <form>
+                <div class="form-row">
+                    <div class="col col-md-2">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="min-date">Date From</span>
+                            </div>
+                            <input onchange="reloadTable();" type="text" name="min-date" id="min" class="form-control" placeholder="Start From" aria-label="Min-Date" aria-describedby="min-date" value="@DateTime.Now.ToString("dd MMMM yyyy 00:00:00")">
+                        </div>
+                    </div>
+
+                    <div class="col col-md-2">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="max-date">Date To</span>
+                            </div>
+                            <input onchange="reloadTable();" type="text" name="max-date" id="max" class="form-control" placeholder="Until" aria-label="Max-date" aria-describedby="max-date" value="@DateTime.Now.ToString("dd MMMM yyyy 23:59:59")">
+                        </div>
+                    </div>
+
+                    <div class="col col-md-2">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <label class="input-group-text" for="tank">Tank</label>
+                            </div>
+                            <select id="tank-name" onchange="reloadTable();" class="custom-select" asp-items=@(new SelectList(ViewBag.TankId,"Tank_Name","Tank_Name"))>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col col-md-2">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <label class="input-group-text">Interval</label>
+                            </div>
+                            <select class="custom-select" id="date-Filter" onchange="reloadTable();" data-placeholder="Select Time">
+                                <option selected value="sec">second</option>
+                                <option value="min">Minute</option>
+                                <option value="10min">10 Minute</option>
+                                <option value="30min">30 Minute</option>
+                                @* <option value="today">Today</option> *@
+                                <option value="hour">Hour</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col col-md-2">
+                        <div class="input-group">
+                            <button type="reset" class="btn btn-warning" style="width: 100%;" onclick="reset();"><i class="fas fa-undo-alt"></i> Reset Filter</button>
+                        </div>
+                    </div>
+                    <div class="col col-md-2">
+                        <div class="input-group">
+                            <button type="button" class="btn btn-success" style="width: 100%;" onclick="ExportExcel();"><i class="fas fa-solid fa-file-excel"></i> Export Excel</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <!-- End Tank Filter -->
+            <!-- Divider -->
+            <hr class="sidebar-divider my-3">
+            <!-- Tank Table -->
+            @await Html.PartialAsync("_ViewAll", Model)
+            <!-- End Tank table -->
+        </div>
+    </div>
+    <!-- End Submain Content -->
+
+</div>
+<!-- End Page Content -->

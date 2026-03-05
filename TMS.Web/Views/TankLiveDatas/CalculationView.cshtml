@@ -1,0 +1,265 @@
+﻿@model IEnumerable<TMS.Models.Tank>
+@{
+    ViewData["Tintle"] = "View";
+    Layout = null;
+}
+
+<style>
+    /* ✅ CSS for Alarm Badge Animation */
+    .blink-animation {
+        animation: blink 1s ease-in-out infinite;
+    }
+    
+    /* ✅ FIX: Use @@keyframes to escape @@ character in Razor view */
+    @@keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .alarm-indicator-container {
+        position: absolute;
+        top: 10px;
+        left: 15px;
+        z-index: 100;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-width: 200px;
+    }
+    
+    .alarm-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        white-space: nowrap;
+    }
+    
+    .alarm-badge.critical {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .alarm-badge.warning {
+        background-color: #fd7e14;
+        color: white;
+    }
+    
+    .alarm-badge i {
+        font-size: 11px;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            // ✅ FIX: Remove nested @{} - declare variables directly inside foreach
+            bool hasLevelAlarm = item.tankLiveData?.Alarm_Status != null && item.tankLiveData.Alarm_Status > 0;
+            bool hasTargetAlarm = item.tankMovement?.Alarm == true;
+            bool hasStagnantAlarm = item.tankMovement?.StagnantAlarm == true;
+            bool hasAnyAlarm = hasLevelAlarm || hasTargetAlarm || hasStagnantAlarm;
+            
+            // Level alarm details
+            string alarmType = "";
+            bool isCritical = false;
+            if (hasLevelAlarm)
+            {
+                alarmType = item.tankLiveData.Alarm_Status switch
+                {
+                    1 => "LL",
+                    2 => "L",
+                    3 => "H",
+                    4 => "HH",
+                    5 => "TempL",
+                    6 => "TempH",
+                    _ => "!"
+                };
+                isCritical = item.tankLiveData.Alarm_Status == 1 || 
+                            item.tankLiveData.Alarm_Status == 4 || 
+                            item.tankLiveData.Alarm_Status == 5 || 
+                            item.tankLiveData.Alarm_Status == 6;
+            }
+            
+            <div class="col-lg-6">
+                <div class="card shadow bg-white rounded" style="position: relative;">
+                    
+                    <!-- ✅ ALARM INDICATOR - POSISI KIRI ATAS CARD -->
+                    <!-- Only show when there's an active alarm -->
+                    @if (hasAnyAlarm)
+                    {
+                        <div class="alarm-indicator-container">
+                            @if (hasLevelAlarm)
+                            {
+                                <div class="alarm-badge @(isCritical ? "critical" : "warning") blink-animation" 
+                                     title="Level Alarm: @alarmType">
+                                    <i class="fas fa-bell"></i> @alarmType
+                                </div>
+                            }
+                            @if (hasTargetAlarm)
+                            {
+                                <div class="alarm-badge critical blink-animation" 
+                                     title="Approaching target level">
+                                    <i class="fas fa-arrow-up"></i> TARGET
+                                </div>
+                            }
+                            @if (hasStagnantAlarm)
+                            {
+                                <div class="alarm-badge warning blink-animation" 
+                                     title="No flowrate detected - stagnant alarm">
+                                    <i class="fas fa-exclamation-triangle"></i> NO FLOW
+                                </div>
+                            }
+                        </div>
+                    }
+                    
+                    <div class="card-header" style="@(hasAnyAlarm ? "padding-top: 45px;" : "")">
+                        <div class="row">
+                            <div class="col-xl-12">
+                                <h5 class="display-5 text-black">
+                                    @Html.DisplayFor(modelItem => item.Tank_Name)
+                                </h5>
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="row">
+                            <div class="col-3">
+                                <h6 class="display-5">
+                                    TARGET  :
+                                </h6>
+                            </div>
+                            <div class="col-3">
+                                @{
+                                    var targetLevel = item.tankMovement?.TargetLevel ?? item.Height_Safe_Capacity;
+                                }
+                                <h6 class="display-6">
+                                    @targetLevel.ToString("N0")
+                                </h6>
+                            </div>
+                            <div class="col-3">
+                                <h6 class="display-5">
+                                    M/s :
+                                </h6>
+                            </div>
+                            <div class="col-3">
+                                @{
+                                    var flowrate = item.HybridFlowrate;
+                                }
+                                <h6 class="display-6">
+                                    @flowrate.ToString("F2")
+                                </h6>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xl-3">
+                                <h5 class="display-5">
+                                    LEVEL :
+                                </h5>
+                            </div>
+                            <div class="col-xl-3">
+                                @{
+                                    double LevelValue = item.tankLiveData?.Level ?? 0.0;
+                                }
+                                <h5 class="display-5">
+                                    @LevelValue.ToString("N0")
+                                </h5>
+                            </div>
+                            <div class="col-xl-3">
+                                <h5 class="display-5">
+                                    ALARM :
+                                </h5>
+                            </div>
+                            <div class="col-xl-3">
+                                <h5 class="display-5">
+                                    @Html.DisplayFor(modelItem => item.tankMovement.AlarmTimeString)
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body py-2 px-3">
+                        @{
+                            string estimated = item.tankMovement?.EstimatedTimeString;
+                            var flowrateValue = item.HybridFlowrate;
+                            string statusText = "MONITORING";
+
+                            if (!string.IsNullOrEmpty(estimated))
+                            {
+                                statusText = estimated;
+                            }
+                            else if (flowrateValue > 0.01)
+                            {
+                                statusText = "LOADING";
+                            }
+                            else if (flowrateValue < -0.01)
+                            {
+                                statusText = "UNLOADING";
+                            }
+                            else
+                            {
+                                statusText = "STANDBY";
+                            }
+                        }
+                        <h1 class="display-3 text-center">
+                            @statusText
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Tank Movement Alarm Polling
+        var tankMovementAlarmInterval;
+        var alarmPollingMs = @(ViewBag.TankMovementAlarmPollingMs ?? 3000);
+        var tankMovementAlarmAudio = new Audio('/audio/alarm-low.mp3');
+        tankMovementAlarmAudio.loop = true;
+        var isAlarmPlaying = false;
+
+        function checkTankMovementAlarm() {
+            $.ajax({
+                url: '@Url.Action("TriggerTankMovementAlarm", "TankMovements")',
+                type: 'GET',
+                contentType: 'application/json; charset=utf-8',
+                success: function (response) {
+                    if (response.isValid && response.data.length > 0) {
+                        if (!isAlarmPlaying) {
+                            tankMovementAlarmAudio.play().catch(function(error) {
+                            });
+                            isAlarmPlaying = true;
+                        }
+                        response.data.forEach(function(alarm) {
+                        });
+                    } else {
+                        if (isAlarmPlaying) {
+                            tankMovementAlarmAudio.pause();
+                            tankMovementAlarmAudio.currentTime = 0;
+                            isAlarmPlaying = false;
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Tank Movement Alarm check error:", error);
+                }
+            });
+        }
+
+        jQuery(document).ready(function($) {
+            checkTankMovementAlarm();
+            tankMovementAlarmInterval = setInterval(checkTankMovementAlarm, alarmPollingMs);
+        });
+
+        $(window).on('beforeunload', function() {
+            clearInterval(tankMovementAlarmInterval);
+            if (isAlarmPlaying) {
+                tankMovementAlarmAudio.pause();
+            }
+        });
+    </script>
+}

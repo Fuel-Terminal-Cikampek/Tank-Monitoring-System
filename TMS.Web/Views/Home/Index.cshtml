@@ -1,0 +1,2500 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+    string imageUp = Url.Content("~/assets/img/arrow-up-green.png");
+    string imageDown = Url.Content("~/assets/img/arrow-down-red.png");
+}
+
+<head>
+    <!-- Google Font: Roboto for better TV readability -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ========================================
+           ✅ DASHBOARD COMPACT MODE - 67% Scale Effect
+           Membuat tampilan 100% zoom terlihat seperti 67%
+           ======================================== */
+        
+        /* Method: Scale down the entire tank grid container */
+        #tank-container {
+            transform: scale(0.70);
+            transform-origin: top left;
+            width: 142.86%;
+            margin-bottom: calc(-30% - 100px); /* ✅ Dynamic calculation */
+            min-height: 0; /* ✅ Prevent minimum height issues */
+        }
+
+        /* ===== BASE STYLES ===== */
+        .table {
+            border: 0px solid rgba(0, 0, 0, 0.0);
+            text-align: left !important;
+        }
+
+        /* ========================================
+                   TANK CARD RESPONSIVE LAYOUT (100% ZOOM)
+                   ======================================== */
+
+        /* ? Container padding untuk breathing room */
+        .container-fluid {
+            padding-left: 1.5rem !important;
+            padding-right: 1.5rem !important;
+        }
+
+        /* ? Tank card sizing */
+        .tank-card-wrapper {
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card.tank-card {
+            height: 100%;
+            transition: transform 0.2s ease;
+        }
+
+            .card.tank-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 16px rgba(0,0,0,0.2) !important;
+            }
+
+        /* ========================================
+                   TANK IMAGE CONTAINER
+                   ======================================== */
+        .tank-image-container {
+            position: relative;
+            padding: 0.5rem;
+            background: white;
+        }
+
+        .tank-img-top {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        /* ========================================
+                   TANK OVERLAY - RESPONSIVE TEXT
+                   ======================================== */
+        .tank-card-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: clamp(0.5rem, 1.5vw, 1rem) !important;
+            margin: 0 !important;
+            pointer-events: none;
+        }
+
+        .tank-overlay-caption {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: clamp(1.5rem, 3vh, 2.5rem);
+        }
+
+        /* ? Column Spacing */
+        .tank-col-flowrate,
+        .tank-col-info,
+        .tank-col-alert {
+            padding: clamp(0.1rem, 0.5vw, 0.3rem);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tank-col-flowrate {
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: clamp(0.8rem, 2.5vh, 1.5rem);
+        }
+
+        .tank-col-info {
+            justify-content: center;
+            align-items: center;
+            padding-top: clamp(0.3rem, 1.5vh, 0.8rem);
+            gap: 0.05rem;
+        }
+
+        .tank-col-alert {
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: clamp(0.8rem, 2.5vh, 1.5rem);
+        }
+
+        /* ========================================
+                   TEXT SIZING - OPTIMIZED FOR TV DISPLAY (2M DISTANCE)
+                   Font: Roboto for better readability
+                   ======================================== */
+        .tank-flowrate-text {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(1.3rem, 2.4vw, 2rem);  /* ? LARGER for TV */
+            color: rgba(0,0,0,1);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0;
+            white-space: nowrap;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.9);
+            letter-spacing: -0.02em;
+        }
+
+        .tank-name-text {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(1.9rem, 3.2vw, 2.8rem);
+            color: rgba(0,0,0,1);
+            font-weight: 900;  /* ? MAXIMUM BOLD for TV */
+            line-height: 1.1;
+            margin-bottom: 0.15rem;
+            text-align: center;
+            text-shadow: 2px 2px 3px rgba(255,255,255,0.95);  /* ? Stronger shadow */
+            letter-spacing: -0.03em;
+            -webkit-text-stroke: 0.5px rgba(0,0,0,0.3);  /* ? Extra boldness */
+        }
+
+        .tank-level-text,
+        .tank-temp-text,
+        .tank-density-text {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(1.25rem, 2.1vw, 1.8rem);  /* ? LARGER for TV */
+            color: rgba(0,0,0,1);
+            font-weight: 700;  /* ? BOLD */
+            line-height: 1.15;
+            margin-bottom: 0.1rem;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.9);
+            letter-spacing: -0.01em;
+        }
+
+        /* ========================================
+                   ARROW IMAGE & ALERT ICON
+                   ======================================== */
+        .tank-arrow-img {
+            width: clamp(25px, 3.5vw, 45px);
+            height: clamp(25px, 3.5vw, 45px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0;  /* ? REDUCED: Kurangi jarak dari text */
+        }
+
+            .tank-arrow-img img {
+                max-width: 100%;
+                max-height: 100%;
+                width: auto;
+                height: auto;
+            }
+
+        .tank-alert-icon {
+            width: clamp(30px, 4.5vw, 55px);
+            height: clamp(30px, 4.5vw, 55px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .tank-alert-icon i {
+                font-size: clamp(1.8rem, 3.5vw, 3.2rem);
+                color: #dc3545;
+            }
+
+        /* ========================================
+                   TANK LEVEL PROGRESS BAR
+                   ======================================== */
+        .tank-level-container {
+            position: absolute;
+            right: clamp(20%, 18vw, 22%);
+            top: clamp(15%, 20vh, 25%);
+            height: clamp(42%, 52vh, 58%);
+            width: clamp(22px, 2.8vw, 38px);
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem; /* Space between percentage text and progress bar */
+        }
+
+        /* ? Percentage text above progress bar - TV OPTIMIZED */
+        .tank-level-percentage {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(0.9rem, 1.4vw, 1.2rem);  /* ? LARGER for TV */
+            font-weight: 700;
+            color: #000;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 4px;
+            padding: 0.2rem 0.35rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .tank-progress-vertical {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            flex: 1; /* Take remaining space after percentage text */
+        }
+
+            .tank-progress-vertical .progress {
+                width: 100%;
+                height: 100%;
+                border-radius: 6px;
+                background-color: rgba(230, 230, 230, 0.95);
+                border: 2px solid #333;
+                overflow: hidden;
+                box-shadow: inset 0 0 6px rgba(0,0,0,0.25);
+                display: flex;
+                flex-direction: column-reverse;
+            }
+
+            .tank-progress-vertical .progress-bar {
+                width: 100% !important;
+                height: 0%;
+                font-size: 0; /* ? CHANGED: Hide text inside progress bar */
+                font-weight: 800;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: height 0.8s ease-in-out;
+                writing-mode: horizontal-tb;
+                color: transparent; /* ? CHANGED: Make text transparent */
+                text-shadow: none; /* ? CHANGED: Remove text shadow */
+            }
+
+        /* ========================================
+                   PRODUCT NAME & BUTTON - TV OPTIMIZED
+                   ======================================== */
+        .card-body.tank-product-name {
+            padding: 0.6rem 0.75rem !important;
+            background: white;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2.8rem;
+        }
+
+        .card-body small.card-title {
+            font-family: 'Roboto', sans-serif;  /* ? Same font as tank data */
+            font-size: clamp(1.15rem, 1.9vw, 1.6rem) !important;  /* ? Same as level/temp/density */
+            font-weight: 700;
+            color: rgba(0,0,0,0.95);
+            line-height: 1.2;
+            margin: 0 !important;
+            padding: 0 !important;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            letter-spacing: -0.01em;
+        }
+
+        /* ? Button Details - Same size as level/temp/density */
+        .card-footer.btn {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(1.15rem, 1.9vw, 1.6rem);  /* ? Same as level/temp/density */
+            font-weight: 700;
+            padding: clamp(0.7rem, 1.2vw, 1rem);
+            border: none;
+            border-radius: 0 0 0.35rem 0.35rem;
+            transition: all 0.3s ease;
+            color: black !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: block !important;
+        }
+
+            .card-footer.btn i {
+                font-size: clamp(1.1rem, 1.8vw, 1.5rem);  /* ? Icon size match */
+            }
+
+            .card-footer.btn:hover {
+                transform: scale(1.02);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                background-color: #0056b3 !important;
+                color: white !important;
+            }
+
+            .card-footer.btn:active {
+                transform: scale(0.98);
+            }
+
+        /* ========================================
+           ✅ MODAL DETAIL TANK - COMPACT VERSION
+           ======================================== */
+        #viewModal .modal-dialog {
+            max-width: 700px !important;
+            width: 700px !important;
+        }
+
+        #viewModal .modal-content {
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+        }
+
+        #viewModal .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom: 0;
+            padding: 0.75rem 1.25rem;
+        }
+
+        #viewModal .modal-title {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+
+        #viewModal .close {
+            color: white;
+            opacity: 1;
+            text-shadow: none;
+            font-size: 1.8rem;
+        }
+
+        #viewModal .modal-body {
+            padding: 1rem 1.25rem;
+            background: #f8f9fa;
+        }
+
+        /* ✅ Compact table styling */
+        #viewModal .table {
+            border: 0 !important;
+            margin-bottom: 0;
+        }
+
+        #viewModal .table th,
+        #viewModal .table td {
+            border: 0 !important;
+            padding: 6px 8px !important;
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.95rem !important;
+        }
+
+        #viewModal .table th {
+            font-weight: 600;
+            color: rgba(0,0,0,0.7);
+            width: 35%;
+        }
+
+        #viewModal .table td:nth-child(2) {
+            width: 5%;
+            text-align: center;
+            color: rgba(0,0,0,0.5);
+        }
+
+        #viewModal .table td:nth-child(3) {
+            width: 60%;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        /* ✅ Compact image in modal */
+        #viewModal .tank-modal-image {
+            max-width: 180px !important;
+            height: auto;
+        }
+
+        #viewModal .card-img-overlay {
+            height: auto !important;
+            width: 90% !important;
+            margin-top: 8% !important;
+            margin-left: 5% !important;
+        }
+
+        #viewModal .card-text {
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.85rem !important;
+            font-weight: 600;
+            margin-bottom: 0.25rem !important;
+        }
+
+        /* ✅ Compact progress bars in modal */
+        #viewModal .text-left {
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(0,0,0,0.7);
+            margin-bottom: 0.25rem;
+            margin-top: 0.5rem;
+        }
+
+        #viewModal .progress {
+            height: 28px !important;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border-radius: 6px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        #viewModal .progress-bar {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        /* ✅ Compact layout for modal columns */
+        #viewModal .row > .col-md-6:first-child {
+            padding-right: 0.5rem;
+        }
+
+        #viewModal .row > .col-md-6:last-child {
+            padding-left: 0.5rem;
+        }
+
+        /* ========================================
+                   DASHBOARD HEADING
+                   ======================================== */
+        .dashboard-heading h1 {
+            font-size: clamp(1.5rem, 2.5vw, 2rem);
+            font-weight: 700;
+        }
+
+        .btn-reload {
+            font-size: clamp(0.85rem, 1.2vw, 1rem);
+            padding: clamp(0.4rem, 0.8vw, 0.6rem) clamp(0.8rem, 1.5vw, 1.2rem);
+        }
+
+        /* ========================================
+               ? TAMBAHKAN INI - FLOWRATE DYNAMIC POSITIONING
+               ======================================== */
+
+        /* ?? FLOWRATE CENTER (No Change) */
+        .tank-col-flowrate.flowrate-center {
+            justify-content: center !important;
+            align-items: center;
+        }
+
+            .tank-col-flowrate.flowrate-center .tank-flowrate-text {
+                margin: 0;
+            }
+
+            .tank-col-flowrate.flowrate-center .tank-arrow-img {
+                display: none;
+            }
+
+        /* ?? FLOWRATE UP (Icon atas, text bawah) */
+        .tank-col-flowrate.flowrate-up {
+            justify-content: flex-start !important;
+            align-items: center;
+        }
+
+            .tank-col-flowrate.flowrate-up .tank-flowrate-text {
+                order: 2;
+                margin-bottom: 50px;
+                margin-top: -0.6rem;  /* ? NEGATIVE MARGIN: SANGAT MEPET! */
+            }
+
+            .tank-col-flowrate.flowrate-up .tank-arrow-img {
+                order: 1;
+                margin-top: -30px;
+                margin-bottom: -1rem;  /* ? NEGATIVE MARGIN: SANGAT MEPET! */
+            }
+
+        /* ?? FLOWRATE DOWN (Text atas, icon bawah) */
+        .tank-col-flowrate.flowrate-down {
+            justify-content: flex-start !important;
+            align-items: center;
+        }
+
+            .tank-col-flowrate.flowrate-down .tank-flowrate-text {
+                order: 1;
+                margin-bottom: -0.6rem;  /* ? NEGATIVE MARGIN: SANGAT MEPET! */
+                margin-top: 30px;
+            }
+
+            .tank-col-flowrate.flowrate-down .tank-arrow-img {
+                order: 2;
+                margin-top: -1rem;  /* ? NEGATIVE MARGIN: SANGAT MEPET! */
+                margin-bottom: -20px;
+            }
+
+        /* ========================================
+           HEADER TITLE - BOLD & LARGER
+           ======================================== */
+        .brand-text {
+            font-weight: 800 !important;
+            color: #000000 !important;
+            font-size: 1.4rem !important;
+            line-height: 1.3 !important;
+            padding: 0.5rem 0 !important;
+        }
+
+        /* ========================================
+           TEXT SIZING - LARGER FOR VISIBILITY FROM DISTANCE
+           ======================================== */
+        .tank-flowrate-text {
+            font-size: clamp(1.2rem, 2vw, 1.6rem) !important;
+            color: rgba(0,0,0,1);
+            font-weight: 800;
+            line-height: 1.4;
+            margin-bottom: 0.3rem;
+            white-space: nowrap;
+        }
+
+        .tank-name-text {
+            font-size: clamp(1.6rem, 2.5vw, 2rem) !important;
+            color: rgba(0,0,0,1);
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 0.4rem;
+            text-align: center;
+        }
+
+        .tank-level-text,
+        .tank-temp-text,
+        .tank-density-text {
+            font-size: clamp(1.2rem, 1.8vw, 1.5rem) !important;
+            color: rgba(0,0,0,1);
+            font-weight: 800;
+            line-height: 1.4;
+            margin-bottom: 0.2rem;
+            white-space: nowrap;
+        }
+
+        /* ========================================
+           ARROW IMAGE - 4-5X LARGER
+           ======================================== */
+        .tank-arrow-img {
+            width: clamp(100px, 14vw, 180px) !important;
+            height: clamp(100px, 14vw, 180px) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+
+            .tank-arrow-img img {
+                max-width: 100%;
+                max-height: 100%;
+                width: auto;
+                height: auto;
+            }
+
+        /* ========================================
+           MEDIA QUERIES - RESOLUTION SPECIFIC (TV OPTIMIZED)
+           Font: Roboto for all tank display elements
+           ======================================== */
+
+        /* Resolution: 1600x1200 - TV Display */
+        @@media (min-width: 1600px) and (max-width: 1919px) {
+            .brand-text {
+                font-size: 1.5rem !important;
+            }
+
+            .tank-name-text {
+                font-size: 2.6rem !important;
+                font-weight: 900 !important;
+                -webkit-text-stroke: 0.6px rgba(0,0,0,0.3) !important;
+            }
+
+            .tank-flowrate-text {
+                font-size: 1.9rem !important;
+                font-weight: 700 !important;
+            }
+
+            .tank-level-text,
+            .tank-temp-text,
+            .tank-density-text {
+                font-size: 1.7rem !important;
+                font-weight: 700 !important;
+            }
+
+            /* ? Product Name & Button - same as level/temp/density */
+            .card-body small.card-title {
+                font-size: 1.7rem !important;
+                font-weight: 700 !important;
+            }
+
+            .card-footer.btn {
+                font-size: 1.7rem !important;
+                font-weight: 700 !important;
+            }
+
+            .card-footer.btn i {
+                font-size: 1.5rem !important;
+            }
+
+            .tank-arrow-img {
+                width: 140px !important;
+                height: 140px !important;
+            }
+
+            #viewModal .modal-dialog {
+                max-width: 750px !important;
+                width: 750px !important;
+            }
+        }
+
+        /* Resolution: 1920x1080 (Full HD) - TV Display */
+        @@media (min-width: 1920px) and (max-width: 2559px) {
+            .brand-text {
+                font-size: 1.6rem !important;
+            }
+
+            .tank-name-text {
+                font-size: 2.8rem !important;
+                font-weight: 900 !important;
+                -webkit-text-stroke: 0.7px rgba(0,0,0,0.3) !important;
+            }
+
+            .tank-flowrate-text {
+                font-size: 2.1rem !important;
+                font-weight: 700 !important;
+            }
+
+            .tank-level-text,
+            .tank-temp-text,
+            .tank-density-text {
+                font-size: 1.9rem !important;
+                font-weight: 700 !important;
+            }
+
+            /* ? Product Name & Button - same as level/temp/density */
+            .card-body small.card-title {
+                font-size: 1.9rem !important;
+                font-weight: 700 !important;
+            }
+
+            .card-footer.btn {
+                font-size: 1.9rem !important;
+                font-weight: 700 !important;
+            }
+
+            .card-footer.btn i {
+                font-size: 1.7rem !important;
+            }
+
+            .tank-arrow-img {
+                width: 160px !important;
+                height: 160px !important;
+            }
+
+            #viewModal .modal-dialog {
+                max-width: 800px !important;
+                width: 800px !important;
+            }
+        }
+
+        /* Resolution: 2560x1440 (2K) - TV Display */
+        @@media (min-width: 2560px) {
+            .brand-text {
+                font-size: 1.8rem !important;
+            }
+
+            .tank-name-text {
+                font-size: 3.2rem !important;
+                font-weight: 900 !important;
+                -webkit-text-stroke: 0.8px rgba(0,0,0,0.3) !important;
+            }
+
+            .tank-flowrate-text {
+                font-size: 2.3rem !important;
+                font-weight: 700 !important;
+            }
+
+            .tank-level-text,
+            .tank-temp-text,
+            .tank-density-text {
+                font-size: 2.1rem !important;
+                font-weight: 700 !important;
+            }
+
+            /* ? Product Name & Button - same as level/temp/density */
+            .card-body small.card-title {
+                font-size: 2.1rem !important;
+                font-weight: 700 !important;
+            }
+
+            .card-footer.btn {
+                font-size: 2.1rem !important;
+                font-weight: 700 !important;
+            }
+
+            .card-footer.btn i {
+                font-size: 1.9rem !important;
+            }
+
+            .tank-arrow-img {
+                width: 180px !important;
+                height: 180px !important;
+            }
+
+            #viewModal .modal-dialog {
+                max-width: 850px !important;
+                width: 850px !important;
+            }
+        }
+
+        /* ========================================
+           WATER LEVEL PROGRESS BAR (SEBELAH KANAN)
+           ======================================== */
+        .tank-water-container {
+            position: absolute;
+            right: clamp(12%, 10vw, 14%); /* Posisi lebih ke kanan dari tank-level-container */
+            top: clamp(15%, 20vh, 25%);
+            height: clamp(42%, 52vh, 58%);
+            width: clamp(22px, 2.8vw, 38px);
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .tank-water-percentage {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(0.9rem, 1.4vw, 1.2rem);  /* ? LARGER for TV */
+            font-weight: 700;
+            color: #000;
+            text-align: center;
+            background: rgba(173, 216, 230, 0.95); /* Light blue background */
+            border-radius: 4px;
+            padding: 0.2rem 0.35rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .tank-water-vertical {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+            .tank-water-vertical .progress {
+                width: 100%;
+                height: 100%;
+                border-radius: 6px;
+                background-color: rgba(230, 230, 230, 0.95);
+                border: 2px solid #1e90ff; /* Blue border untuk water */
+                overflow: hidden;
+                box-shadow: inset 0 0 6px rgba(0,0,0,0.25);
+                display: flex;
+                flex-direction: column-reverse;
+            }
+
+            .tank-water-vertical .progress-bar {
+                width: 100% !important;
+                height: 0%;
+                background-color: #1e90ff !important; /* Blue color untuk water */
+                font-size: 0;
+                font-weight: 800;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: height 0.8s ease-in-out;
+                writing-mode: horizontal-tb;
+                color: transparent;
+                text-shadow: none;
+            }
+
+        /* ========================================
+           TANK OPERATION BUTTON (TOP RIGHT)
+           ======================================== */
+        .tank-operation-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            z-index: 10;
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(0.75rem, 1.1vw, 0.95rem) !important;
+            font-weight: 700 !important;
+            padding: clamp(0.3rem, 0.6vw, 0.5rem) clamp(0.5rem, 0.9vw, 0.75rem) !important;
+            border-radius: 6px;
+            border: 2px solid rgba(0,0,0,0.2);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            pointer-events: auto;
+        }
+
+            .tank-operation-btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            }
+
+            .tank-operation-btn i {
+                font-size: clamp(0.7rem, 1vw, 0.85rem) !important;
+                margin-right: 0.25rem;
+            }
+
+        /* Operation button color variants */
+        .tank-operation-btn.btn-success {
+            background-color: #28a745 !important;
+            border-color: #28a745 !important;
+            color: white !important;
+        }
+
+        .tank-operation-btn.btn-danger {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
+
+        .tank-operation-btn.btn-warning {
+            background-color: #ffc107 !important;
+            border-color: #ffc107 !important;
+            color: #212529 !important;
+        }
+
+        .tank-operation-btn.btn-secondary {
+            background-color: #6c757d !important;
+            border-color: #6c757d !important;
+            color: white !important;
+        }
+
+        /* Media Queries untuk Water Level Container */
+        @@media (min-width: 1600px) and (max-width: 1919px) {
+            .tank-water-container {
+                right: 12%;
+                width: 32px;
+                gap: 0.3rem;
+            }
+
+            .tank-water-percentage {
+                font-size: 1.1rem !important;
+            }
+        }
+
+        @@media (min-width: 1920px) and (max-width: 2559px) {
+            .tank-water-container {
+                right: 13%;
+                width: 36px;
+                gap: 0.35rem;
+            }
+
+            .tank-water-percentage {
+                font-size: 1.2rem !important;
+            }
+        }
+
+        @@media (min-width: 2560px) {
+            .tank-water-container {
+                right: 14%;
+                width: 42px;
+                gap: 0.4rem;
+            }
+
+            .tank-water-percentage {
+                font-size: 1.4rem !important;
+            }
+        }
+
+        /* ========================================
+           ICON STYLING - ICONS DI SEBELAH KIRI NILAI (TV OPTIMIZED)
+           ======================================== */
+        .tank-value-icon {
+            display: inline-block;
+            width: clamp(24px, 3vw, 36px);  /* ? INCREASED for TV */
+            height: clamp(24px, 3vw, 36px);  /* ? INCREASED for TV */
+            margin-right: 0.4rem;
+            vertical-align: middle;
+            color: rgba(0, 0, 0, 0.85);  /* ? Darker for better contrast */
+            font-size: clamp(1.1rem, 1.8vw, 1.5rem) !important;  /* ? INCREASED for TV */
+        }
+
+        .tank-value-number {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        /* Icon colors - sesuaikan dengan jenis data */
+        .tank-level-text .tank-value-icon {
+            color: #1d4ed8; /* Blue untuk level - darker */
+        }
+
+        .tank-temp-text .tank-value-icon {
+            color: #b91c1c; /* Red untuk temperature - darker */
+        }
+
+        .tank-density-text .tank-value-icon {
+            color: #6d28d9; /* Purple untuk density - darker */
+        }
+
+        /* ========================================
+           RESPONSIVE ICON SIZES (TV OPTIMIZED)
+           ======================================== */
+        @@media (min-width: 1600px) and (max-width: 1919px) {
+            .tank-value-icon {
+                width: 30px;  /* ? INCREASED */
+                height: 30px;
+                font-size: 1.3rem !important;
+            }
+        }
+
+        @@media (min-width: 1920px) and (max-width: 2559px) {
+            .tank-value-icon {
+                width: 34px;  /* ? INCREASED */
+                height: 34px;
+                font-size: 1.4rem !important;
+            }
+        }
+
+        @@media (min-width: 2560px) {
+            .tank-value-icon {
+                width: 38px;  /* ? INCREASED */
+                height: 38px;
+                font-size: 1.6rem !important;
+            }
+        }
+
+        /* ========================================
+           ✅ ALARM INDICATOR - POSISI KIRI ATAS CARD
+           (Seperti di gambar - lingkaran merah)
+           ======================================== */
+        .alarm-indicator-container {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 15;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-width: 120px;
+            pointer-events: auto;
+        }
+
+        .alarm-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 3px 8px;
+            border-radius: 50%;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 700;
+            font-size: 0.7rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            min-width: 28px;
+            min-height: 28px;
+        }
+
+        .alarm-badge.critical {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .alarm-badge.warning {
+            background-color: #fd7e14;
+            color: white;
+        }
+
+        .alarm-badge i {
+            font-size: 0.65rem;
+        }
+
+        .blink-animation {
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        @@keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ✅ Larger alarm badges for TV display */
+        @@media (min-width: 1600px) {
+            .alarm-badge {
+                padding: 4px 10px;
+                font-size: 0.8rem;
+                min-width: 32px;
+                min-height: 32px;
+            }
+
+            .alarm-badge i {
+                font-size: 0.75rem;
+            }
+        }
+
+        @@media (min-width: 1920px) {
+            .alarm-badge {
+                padding: 5px 12px;
+                font-size: 0.85rem;
+                min-width: 36px;
+                min-height: 36px;
+            }
+
+            .alarm-badge i {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+    @section Scripts{
+        <script type="text/javascript">
+            var intervalModalShow;
+            var intervalHomeLoad;
+            var imageUp = '@imageUp';
+            var imageDown = '@imageDown';
+            const imgDown = '<img src="' + imageDown + '" class="img-fluid" style="width:45%;  visibility=hidden" alt="t">';  /* ? INCREASED for TV */
+            const imgUp = '<img src="' + imageUp + '" class="img-fluid" style="width:45%;  visibility=hidden" alt="t">';  /* ? INCREASED for TV */
+            const imgDownModal = '<img src="' + imageDown + '" class="img-fluid" style="width:10%;  visibility=hidden" alt="t">';
+            const imgUpModal = '<img src="' + imageUp + '" class="img-fluid" style="width:10%;  visibility=hidden" alt="t">';
+            const alert1 = '<i class="fa-solid fa-bell" style="width:50px; height:50px;color:red;"></i>';
+            const alert2 = '<i class="fa-solid fa-bell" style="width:25px; height:25px;color:red;"></i>';
+            var TankId;
+
+            // Get polling interval from server (from appsettings.json)
+            var pollingIntervalMs = @ViewBag.PollingIntervalMs;
+
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            // This passes $ as a parameter, making it available even if something overrides global $
+            jQuery(document).ready(function ($) {
+                // Use dynamic polling interval from appsettings.json
+                setInterval(realTimeData, pollingIntervalMs);
+                $("#viewModal").on('show.bs.modal', function () {
+                    intervalModalShow = setInterval(realTimeDataPopUp, pollingIntervalMs);
+                });
+                $('#viewModal').on('hidden.bs.modal', function () {
+                    clearInterval(intervalModalShow);
+                });
+            });
+            //end document
+            function setDatatoTank(tankData) {
+                let tankLevel = tankData.liquidLevel;
+                let tankLevelFixed = tankLevel;
+
+                // ? UPDATE: Hanya update span dengan class tank-value-number
+                var element = document.getElementById(tankData.tankId);
+                if (element) {
+                    var valueSpan = element.querySelector('.tank-value-number');
+                    if (valueSpan) {
+                        valueSpan.innerHTML = tankLevelFixed.toString() + " mm";
+                    }
+                }
+
+                // ✅ UPDATE: Update alarm indicator container (KIRI ATAS)
+                var alarmContainerId = "alarmContainer" + tankData.tankId.toString();
+                var alarmContainer = document.getElementById(alarmContainerId);
+                
+                if (alarmContainer) {
+                    if (tankData.status == "ALARM") {
+                        // Show alarm badge
+                        var alarmHtml = '<div class="alarm-badge critical blink-animation" title="Level Alarm">';
+                        alarmHtml += '<i class="fas fa-bell"></i>';
+                        alarmHtml += '</div>';
+                        alarmContainer.innerHTML = alarmHtml;
+                        alarmContainer.style.display = 'flex';
+                    } else {
+                        // Hide alarm container
+                        alarmContainer.innerHTML = '';
+                        alarmContainer.style.display = 'none';
+                    }
+                }
+
+                // ✅ Also clear the old alert column (for backward compatibility)
+                var alertId = "alert" + tankData.tankId.toString();
+                var alertElement = document.getElementById(alertId);
+                if (alertElement) {
+                    alertElement.innerHTML = "";  // Clear old alert location
+                }
+            }
+
+            // Fungsi baru untuk update progress bar - UPDATE dengan text di atas
+            function setProgressBarLevel(tankData) {
+                var persenLevel = tankData.persLevel || 0;
+
+                // Update progress bar untuk setiap tank
+                var progLevelId = "progLevel" + tankData.tankId.toString();
+                var progLevelTextId = "progLevelText" + tankData.tankId.toString(); // ? NEW
+
+                let progressBarLevel = document.getElementById(progLevelId);
+                let progressBarText = document.getElementById(progLevelTextId); // ? NEW
+
+                if (progressBarLevel && progressBarText) { // ? CHANGED: Check both elements
+                    var percentage = Math.max(0, Math.min(100, persenLevel));
+
+                    // Update progress bar height (no text inside)
+                    progressBarLevel.style.height = percentage.toString() + "%";
+                    progressBarLevel.innerHTML = ""; // ? CHANGED: Remove text from inside
+                    progressBarLevel.setAttribute("aria-valuenow", percentage);
+
+                    // ? NEW: Update text above progress bar
+                    progressBarText.innerHTML = Math.round(percentage).toString() + "%";
+
+                    // Set background color dari product HexColor
+                    var productColor = tankData.hexColor || "#6c757d";
+                    progressBarLevel.style.backgroundColor = productColor;
+                    progressBarLevel.className = 'progress-bar progress-bar-striped progress-bar-animated';
+                } else {
+                    console.error("? Progress bar element NOT FOUND for ID: " + progLevelId);
+                }
+            }
+            // ? FUNCTION BARU - Update progress bar untuk Water Level
+            function setProgressBarWater(tankData) {
+                var waterLevel = tankData.waterLevel || 0;
+                var maxHeight = tankData.maxHeight || 1000; // Asumsi max height dari tank.Tank_Height
+
+                // Hitung persentase water level
+                var persenWater = (waterLevel / maxHeight) * 100;
+                persenWater = Math.max(0, Math.min(100, persenWater)); // Batasi 0-100%
+                console.log("Tank ID: " + tankData.tankId + ", Water Level = " + waterLevel + "mm, Persen = " + persenWater.toFixed(2) + "%");
+
+                var progWaterId = "progWater" + tankData.tankId.toString();
+                var progWaterTextId = "progWaterText" + tankData.tankId.toString();
+
+                let progressBarWater = document.getElementById(progWaterId);
+                let progressBarWaterText = document.getElementById(progWaterTextId);
+
+                if (progressBarWater && progressBarWaterText) {
+
+                    // Update progress bar height
+                    progressBarWater.style.height = persenWater.toString() + "%";
+                    progressBarWater.innerHTML = "";
+                    progressBarWater.setAttribute("aria-valuenow", persenWater);
+
+                    // Update text above progress bar
+                    progressBarWaterText.innerHTML = Math.round(persenWater).toString() + "%";
+
+                    // Set color biru untuk water
+                    progressBarWater.style.backgroundColor = "#1e90ff";
+                    progressBarWater.className = 'progress-bar progress-bar-striped progress-bar-animated';
+
+                    console.log("? Water progress bar updated to: " + persenWater.toFixed(2) + "%");
+                } else {
+                    console.error("? Water progress bar element NOT FOUND for ID: " + progWaterId);
+                }
+            }
+            function setDataTemp(tankData) {
+                let tankTemp = tankData.liquidTemperature.toFixed(2);
+                let tankTempFixed = tankTemp;
+                var tempId = "temp" + tankData.tankId.toString();
+
+                // ? UPDATE: Hanya update span dengan class tank-value-number
+                var element = document.getElementById(tempId);
+                if (element) {
+                    var valueSpan = element.querySelector('.tank-value-number');
+                    if (valueSpan) {
+                        valueSpan.innerHTML = tankTempFixed.toString() + " °C";
+                    }
+                }
+            }
+
+            function setDataDensity(tankData) {
+                let tankDensity = tankData.liquidDensity || 0;
+                let tankDensityFixed = tankDensity.toFixed(3);
+                var densityId = "density" + tankData.tankId.toString();
+
+                // ? UPDATE: Hanya update span dengan class tank-value-number
+                var element = document.getElementById(densityId);
+                if (element) {
+                    var valueSpan = element.querySelector('.tank-value-number');
+                    if (valueSpan) {
+                        valueSpan.innerHTML = tankDensityFixed + " kg/m³";
+                    }
+                }
+            }
+
+            function setDataFlowrate(tankData) {
+                let tankFlowrate = tankData.flowrate;
+                let tankFlowrateFixed = tankFlowrate.toFixed(2);
+                var flowrateId = "flowrate" + tankData.tankId.toString();
+                var imgId = "img" + tankData.tankId.toString();
+                var colId = "col-flowrate-" + tankData.tankId.toString();
+
+                const imgElement = document.getElementById(imgId);
+                const flowrateElement = document.getElementById(flowrateId);
+                const colElement = document.getElementById(colId);
+
+                var threshold = 0.01;
+
+                // ? FLOWRATE UP
+                if (tankFlowrate > threshold) {
+                    imgElement.innerHTML = imgUp;
+                    // ? UPDATE: Flowrate dengan satuan dalam 1 baris
+                    flowrateElement.innerHTML = tankFlowrateFixed + " KL/H";
+                    colElement.className = "col-4 tank-col-flowrate flowrate-up";
+                }
+                // ? FLOWRATE DOWN
+                else if (tankFlowrate < -threshold) {
+                    imgElement.innerHTML = imgDown;
+                    flowrateElement.innerHTML = tankFlowrateFixed + " KL/H";
+                    colElement.className = "col-4 tank-col-flowrate flowrate-down";
+                }
+                // ? NO CHANGE
+                else {
+                    imgElement.innerHTML = '';
+                    flowrateElement.innerHTML = "0.00 KL/H";
+                    colElement.className = "col-4 tank-col-flowrate flowrate-center";
+                }
+            }
+
+            function setOperationStatus(tankData) {
+                if (!tankData.operationStatus && tankData.operationStatus !== 0) return;
+                
+                var btnId = "btnOperation" + tankData.tankId;
+                var btn = document.getElementById(btnId);
+                
+                if (!btn) {
+                    return;
+                }
+                
+                // Update button based on status
+                // 0 = IDLE (secondary/gray), 1 = RECEIVING (success/green), 2 = SALES (danger/red)
+                switch(tankData.operationStatus) {
+                    case 1: // RECEIVING
+                        btn.className = "tank-operation-btn btn btn-success btn-sm";
+                        btn.innerHTML = '<i class="fas fa-arrow-up"></i> RECEIVING';
+                        break;
+                    case 2: // SALES
+                        btn.className = "tank-operation-btn btn btn-danger btn-sm";
+                        btn.innerHTML = '<i class="fas fa-arrow-down"></i> SALES';
+                        break;
+                    default: // IDLE (0)
+                        btn.className = "tank-operation-btn btn btn-secondary btn-sm";
+                        btn.innerHTML = '<i class="fas fa-pause"></i> IDLE';
+                        break;
+                }
+            }
+
+            function realTimeData() {
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("GetData")",
+                    dataType: "json",
+                    success: function (result) {
+                        if (result && result.length > 0) {
+                            for (tnk in result) {
+                                if (result[tnk] != null && result[tnk] != undefined) {
+                                    setDatatoTank(result[tnk]);
+                                    setDataTemp(result[tnk]);
+                                    setDataFlowrate(result[tnk]);
+                                    setProgressBarLevel(result[tnk]);
+                                    setDataDensity(result[tnk]);
+                                    setProgressBarWater(result[tnk]);
+                                    setOperationStatus(result[tnk]); // ? ADD: Update operation button
+                                }
+                            }
+                        }
+                    },
+                    error: function (err) {
+                    }
+                });
+            }
+
+            function realTimeDataPopUp() {
+                var Id = {
+                    Id: TankId
+                };
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("GetDataByTankId")",
+                    dataType: "json",
+                    data: Id,
+                    success: function (result) {
+                        if (result == null || result == undefined) {
+                            return;
+                        }
+
+                        var persenLevel = result.persLevel || 0;
+                        console.log("Persen Level = " + persenLevel)
+                        var persenVolume = result.persVolume || 0;
+                        console.log("Persen Volume = " + persenVolume)
+
+                        //progress bar level
+                        let progressBarLevel = document.getElementById("progLevel");
+                        if (progressBarLevel) {
+                            progressBarLevel.style.width = Math.max(0, Math.min(100, persenLevel)).toString() + "%";
+                            progressBarLevel.innerHTML = Math.max(0, Math.min(100, persenLevel)).toString() + "%";
+                            progressBarLevel.setAttribute("aria-valuenow", Math.max(0, Math.min(100, persenLevel)));
+                        }
+
+                        //progress bar water
+                        let progressBarWater = document.getElementById("progWater");
+                        if (progressBarWater) {
+                            var persenWater = (result.waterLevel / result.maxHeight) * 100;
+                            persenWater = Math.max(0, Math.min(100, persenWater));
+
+                            progressBarWater.style.width = persenWater.toString() + "%";
+                            progressBarWater.setAttribute("aria-valuenow", persenWater);
+                        }
+
+                        //set table table
+                        $("#tbName").text(result.tankName || "Unknown");
+                        $("#tbProduct").text(result.productName || "Unknown");
+                        $("#tbTimeStamp").text(result.timeStamp ? moment(result.timeStamp).format('DD MMM YYYY HH:mm:ss') : "N/A");
+                        $("#tbLevel").text(result.liquidLevel || "0");
+                        $("#tbWater").text(result.waterLevel || "0");
+                        $("#tbTemp").text(result.liquidTemperature ? result.liquidTemperature.toFixed(2) : "0.00");
+                        $("#tbDensity").text(result.liquidDensity ? result.liquidDensity.toFixed(3) : "0.000");
+                        // ? FIX: Volume SUDAH dalam LITER dari FD-Interface (tidak perlu dikali 1000!)
+                        var volumeInLiters = Math.round(result.volume || 0);
+                        // Format dengan separator titik (Indonesian format)
+                        $("#tbVolume").text(volumeInLiters.toLocaleString('id-ID'));
+                        $("#tbFlowrate").text((result.flowrate || 0).toFixed(2));
+
+                        var tankFlowrateFixed = (result.flowrate || 0).toFixed(0);
+                        const tbImage = document.getElementById('tbImage');
+                        const tbAlert = document.getElementById('tbAlert');
+
+                        if (result.status == "ALARM") {
+                            tbAlert.innerHTML = alert1;
+                        }
+                        else {
+                            tbAlert.innerHTML = "";
+                        }
+
+                        if (tankFlowrateFixed > 0) {
+                            if (tbImage) tbImage.innerHTML = imgUpModal;
+                            document.getElementById('tbFlowrate').innerHTML = tankFlowrateFixed.toString() + " KL/H";
+                        }
+                        else if (tankFlowrateFixed < 0) {
+                            if (tbImage) tbImage.innerHTML = imgDownModal;
+                            document.getElementById('tbFlowrate').innerHTML = tankFlowrateFixed.toString() + " KL/H";
+                        }
+                        else {
+                            if (tbImage) tbImage.innerHTML = '';
+                            document.getElementById('tbFlowrate').innerHTML = "";
+                        }
+                    },
+                    error: function (err) {
+                    }
+
+                });
+            }
+
+            function OpenModal(data) {
+                var value = data.value;
+                TankId = value;
+                // ? REMOVED: jQuery.noConflict() - ini menghapus $ alias
+                $("#viewModal").modal('show');
+            }
+
+            // OPEN OPERATIONAL STATUS MODAL
+            function OpenOperationalStatus(tankName) {
+                $.ajax({
+                    type: "GET",
+                    url: "@Url.Action("GetOperationalStatus", "Home")?tankName=" + tankName,
+                    success: function (res) {
+                        $("#form-modal .modal-body").html(res);
+                        $("#form-modal .modal-title").html('Update Operational Status');
+                        $("#form-modal").modal('show');
+                    },
+                    error: function (err) {
+                        alert("Error loading status form");
+                    }
+                });
+            }
+
+            function getRow() {
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("GetRow")",
+                    dataType: "json",
+                    success: function (result) {
+
+                    },
+                    error: function (err) {
+                    }
+
+                });
+            }
+
+            // ========================================
+            // DASHBOARD ALARM MANAGEMENT FUNCTIONS
+            // (Same functionality as TankTicket page)
+            // ========================================
+            var dbPendingTicketId = null;
+            var dbHistoryCurrentPage = 1;
+            var dbHistoryPageSize = 10;
+            var dbHistoryHasMore = true;
+            var dbHistoryLoading = false;
+            var dbHistoryData = [];
+            var dbAlarmRefreshInterval = null;
+
+            // Open the alarm modal
+            function openDashboardAlarmSettings() {
+
+                // Reset form
+                if ($('#dbAlarmSettingsForm')[0]) {
+                    $('#dbAlarmSettingsForm')[0].reset();
+                }
+                $('#dbSettingsFormGroup').hide();
+                $('#dbCurrentSettingsInfo').html('');
+
+                // Manual modal show
+                var modalElement = $('#dashboardAlarmSettingsModal');
+                modalElement.addClass('show');
+                modalElement.css('display', 'block');
+                modalElement.attr('aria-modal', 'true');
+                modalElement.attr('aria-hidden', 'false');
+
+                if ($('.modal-backdrop').length === 0) {
+                    $('body').append('<div class="modal-backdrop fade show"></div>');
+                }
+                $('body').addClass('modal-open');
+
+                // Load active alarms by default (first tab)
+                switchToDashboardActiveAlarmsTab();
+                dbLoadActiveAlarms();
+
+                // Start auto-refresh (every 5 seconds)
+                if (dbAlarmRefreshInterval) {
+                    clearInterval(dbAlarmRefreshInterval);
+                }
+                dbAlarmRefreshInterval = setInterval(function() {
+                    if ($('#dbActiveAlarmsTab').hasClass('active')) {
+                        dbRefreshActiveAlarms();
+                    }
+                }, 5000);
+            }
+
+            // Close modal
+            function closeDashboardAlarmModal() {
+
+                if (dbAlarmRefreshInterval) {
+                    clearInterval(dbAlarmRefreshInterval);
+                    dbAlarmRefreshInterval = null;
+                }
+
+                var modalElement = $('#dashboardAlarmSettingsModal');
+                modalElement.removeClass('show');
+                modalElement.css('display', 'none');
+                modalElement.attr('aria-modal', 'false');
+                modalElement.attr('aria-hidden', 'true');
+
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+            }
+
+            // ========================================
+            // TAB SWITCHING FUNCTIONS
+            // ========================================
+            function switchToDashboardActiveAlarmsTab() {
+                $('#dbActiveAlarmsTab').addClass('active');
+                $('#dbHistoryTab').removeClass('active');
+                $('#dbSettingsTab').removeClass('active');
+                $('#dbActiveAlarmsPanel').addClass('show active');
+                $('#dbHistoryPanel').removeClass('show active');
+                $('#dbSettingsPanel').removeClass('show active');
+                $('#btnSaveDbAlarmSettings').hide();
+            }
+
+            function switchToDashboardHistoryTab() {
+                $('#dbActiveAlarmsTab').removeClass('active');
+                $('#dbHistoryTab').addClass('active');
+                $('#dbSettingsTab').removeClass('active');
+                $('#dbActiveAlarmsPanel').removeClass('show active');
+                $('#dbHistoryPanel').addClass('show active');
+                $('#dbSettingsPanel').removeClass('show active');
+                $('#btnSaveDbAlarmSettings').hide();
+                dbLoadHistory(true);
+            }
+
+            function switchToDashboardSettingsTab() {
+                $('#dbActiveAlarmsTab').removeClass('active');
+                $('#dbHistoryTab').removeClass('active');
+                $('#dbSettingsTab').addClass('active');
+                $('#dbActiveAlarmsPanel').removeClass('show active');
+                $('#dbHistoryPanel').removeClass('show active');
+                $('#dbSettingsPanel').addClass('show active');
+                $('#btnSaveDbAlarmSettings').show();
+                loadDbTanksWithRecentROT();
+            }
+
+            // ========================================
+            // ACTIVE ALARMS TAB FUNCTIONS
+            // ========================================
+            function dbLoadActiveAlarms() {
+                $('#dbActiveAlarmsContainer').html('<div class="text-center py-4"><div class="spinner-border text-warning"></div><p class="mt-2">Loading...</p></div>');
+
+                $.ajax({
+                    url: '/TankMovements/GetActiveAlarmsWithDetails',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.isValid) {
+                            dbRenderAlarmCards(response.data, response.count);
+                            $('#dbAlarmBadge').text(response.count);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('#dbActiveAlarmsContainer').html('<div class="alert alert-danger">Error: ' + error + '</div>');
+                    }
+                });
+            }
+
+            function dbRefreshActiveAlarms() {
+                $.ajax({
+                    url: '/TankMovements/GetActiveAlarmsWithDetails',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.isValid) {
+                            dbRenderAlarmCards(response.data, response.count);
+                        }
+                    }
+                });
+            }
+
+            function dbRenderAlarmCards(tanks, count) {
+                $('#dbAlarmBadge').text(count);
+
+                if (count === 0) {
+                    $('#dbActiveAlarmsContainer').html(
+                        '<div class="alert alert-success text-center">' +
+                        '<i class="fas fa-check-circle fa-3x mb-3"></i>' +
+                        '<h5>No Active Monitoring</h5>' +
+                        '<p class="mb-0">No tanks are currently being monitored</p>' +
+                        '</div>'
+                    );
+                    $('#dbActiveAlarmsActions').hide();
+                    return;
+                }
+
+                var alarmTanks = tanks.filter(function(t) { return t.stagnantAlarm === true; });
+                var normalTanks = tanks.filter(function(t) { return t.stagnantAlarm === false; });
+
+                if (alarmTanks.length > 0) {
+                    $('#dbActiveAlarmsActions').show();
+                } else {
+                    $('#dbActiveAlarmsActions').hide();
+                }
+
+                var html = '';
+
+                // Section 1: ALARM TANKS (Red cards)
+                if (alarmTanks.length > 0) {
+                    html += '<div class="mb-3>';
+                    html += '<h6 class="text-danger"><i class="fas fa-exclamation-circle"></i> ALARMS - ' + alarmTanks.length + ' tank(s)</h6>';
+                    html += '</div>';
+
+                    alarmTanks.forEach(function(tank) {
+                        html += '<div class="card border-danger mb-3" data-tank="' + tank.tankNumber + '" data-duration-seconds="' + tank.durationSeconds + '" data-alarm="true">';
+                        html += '<div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">';
+                        html += '<span><i class="fas fa-exclamation-triangle"></i> <strong>Tank: ' + tank.tankNumber + '</strong></span>';
+                        html += '<span class="badge badge-light text-danger">STAGNANT</span>';
+                        html += '</div>';
+                        html += '<div class="card-body">';
+                        html += '<div class="row">';
+                        html += '<div class="col-md-6">';
+                        html += '<p class="mb-1"><strong>Duration:</strong> <span class="db-alarm-duration text-danger">' + tank.durationDisplay + '</span></p>';
+                        html += '<p class="mb-1"><strong>Flowrate:</strong> ' + (tank.flowrate || 0).toFixed(2) + ' m³/h</p>';
+                        html += '<p class="mb-1"><strong>Last Change:</strong> ' + (tank.lastFlowrateChangeTime ? moment(tank.lastFlowrateChangeTime).format('DD MMM YYYY HH:mm') : 'N/A') + '</p>';
+                        html += '</div>';
+                        html += '<div class="col-md-6">';
+                        html += '<p class="mb-1"><strong>Threshold:</strong> ' + tank.stagnantThresholdMinutes + ' minutes</p>';
+                        html += '<p class="mb-1"><strong>Current Level:</strong> ' + (tank.currentLevel || 'N/A') + ' mm</p>';
+                        html += '<p class="mb-1"><strong>Target Level:</strong> ' + (tank.targetLevel || 'N/A') + ' mm</p>';
+                        html += '</div>';
+                        html += '</div>';
+                        html += '<hr />';
+                        html += '<div class="text-right">';
+                        html += '<button class="btn btn-success btn-sm" onclick="dbAckAlarm(\'' + tank.tankNumber + '\')">';
+                        html += '<i class="fas fa-check"></i> ACK</button> ';
+                        html += '<button class="btn btn-secondary btn-sm" onclick="dbJumpToSettings(\'' + tank.tankNumber + '\')">';
+                        html += '<i class="fas fa-cog"></i> Settings</button> ';
+                        html += '<button class="btn btn-danger btn-sm" onclick="dbStopMonitoring(\'' + tank.tankNumber + '\')">';
+                        html += '<i class="fas fa-stop"></i> Stop Monitoring</button>';
+                        html += '</div>';
+                        html += '</div>';
+                        html += '</div>';
+                    });
+                }
+
+                // Section 2: NORMAL TANKS (Green cards)
+                if (normalTanks.length > 0) {
+                    html += '<div class="mb-3 mt-4">';
+                    html += '<h6 class="text-success"><i class="fas fa-check-circle"></i> MONITORING - ' + normalTanks.length + ' tank(s)</h6>';
+                    html += '</div>';
+
+                    normalTanks.forEach(function(tank) {
+                        html += '<div class="card border-success mb-3" data-tank="' + tank.tankNumber + '" data-duration-seconds="' + tank.durationSeconds + '" data-alarm="false">';
+                        html += '<div class="card-header bg-success text-white d-flex justify-content-between align-items-center">';
+                        html += '<span><i class="fas fa-check"></i> <strong>Tank: ' + tank.tankNumber + '</strong></span>';
+                        html += '<span class="badge badge-light text-success">NORMAL</span>';
+                        html += '</div>';
+                        html += '<div class="card-body">';
+                        html += '<div class="row">';
+                        html += '<div class="col-md-6">';
+                        html += '<p class="mb-1"><strong>Duration:</strong> <span class="db-alarm-duration text-success">' + tank.durationDisplay + '</span></p>';
+                        html += '<p class="mb-1"><strong>Flowrate:</strong> <span class="text-success">' + (tank.flowrate || 0).toFixed(2) + ' m³/h</span></p>';
+                        html += '<p class="mb-1"><strong>Last Change:</strong> ' + (tank.lastFlowrateChangeTime ? moment(tank.lastFlowrateChangeTime).format('DD MMM YYYY HH:mm') : 'N/A') + '</p>';
+                        html += '</div>';
+                        html += '<div class="col-md-6">';
+                        html += '<p class="mb-1"><strong>Threshold:</strong> ' + tank.stagnantThresholdMinutes + ' minutes</p>';
+                        html += '<p class="mb-1"><strong>Current Level:</strong> ' + (tank.currentLevel || 'N/A') + ' mm</p>';
+                        html += '<p class="mb-1"><strong>Target Level:</strong> ' + (tank.targetLevel || 'N/A') + ' mm</p>';
+                        html += '</div>';
+                        html += '</div>';
+                        html += '<hr />';
+                        html += '<div class="text-right">';
+                        html += '<button class="btn btn-secondary btn-sm" onclick="dbJumpToSettings(\'' + tank.tankNumber + '\')">';
+                        html += '<i class="fas fa-cog"></i> Settings</button> ';
+                        html += '<button class="btn btn-warning btn-sm" onclick="dbStopMonitoring(\'' + tank.tankNumber + '\')">';
+                        html += '<i class="fas fa-stop"></i> Stop Monitoring</button>';
+                        html += '</div>';
+                        html += '</div>';
+                        html += '</div>';
+                    });
+                }
+
+                $('#dbActiveAlarmsContainer').html(html);
+
+                // Start live timer
+                dbUpdateAlarmTimers();
+            }
+
+            // Live timer countdown
+            function dbUpdateAlarmTimers() {
+                $('.card[data-tank]').each(function() {
+                    var card = $(this);
+                    var durationSeconds = parseInt(card.attr('data-duration-seconds'));
+
+                    durationSeconds++;
+                    card.attr('data-duration-seconds', durationSeconds);
+
+                    var days = Math.floor(durationSeconds / 86400);
+                    var hours = Math.floor((durationSeconds % 86400) / 3600);
+                    var minutes = Math.floor((durationSeconds % 3600) / 60);
+                    var seconds = durationSeconds % 60;
+
+                    var durationDisplay = '';
+                    if (days > 0) {
+                        durationDisplay = days + 'd ' + hours + 'h ' + minutes + 'm';
+                    } else if (hours > 0) {
+                        durationDisplay = hours + 'h ' + minutes + 'm ' + seconds + 's';
+                    } else {
+                        durationDisplay = minutes + 'm ' + seconds + 's';
+                    }
+
+                    card.find('.db-alarm-duration').text(durationDisplay);
+                });
+
+                setTimeout(dbUpdateAlarmTimers, 1000);
+            }
+
+            function dbAckAlarm(tankNumber) {
+                $.ajax({
+                    url: '/TankMovements/AckIndividualAlarm',
+                    type: 'POST',
+                    data: { tankNumber: tankNumber },
+                    success: function(response) {
+                        if (response.isValid) {
+                            dbLoadActiveAlarms();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    }
+                });
+            }
+
+            function dbBulkAckAllAlarms() {
+                $.ajax({
+                    url: '/TankMovements/AckTankMovementAlarm',
+                    type: 'POST',
+                    success: function(response) {
+                        if (response.isValid) {
+                            dbLoadActiveAlarms();
+                        }
+                    }
+                });
+            }
+
+            function dbJumpToSettings(tankNumber) {
+                switchToDashboardSettingsTab();
+                $('#dbAlarmTankSelect').val(tankNumber);
+                loadDbTankSettings(tankNumber);
+            }
+
+            function dbStopMonitoring(tankNumber) {
+                if (!confirm('Are you sure you want to stop monitoring ' + tankNumber + '?\n\nThis will:\n- Stop alarm monitoring\n- Deactivate stagnant detection\n- Remove tank from monitoring list')) {
+                    return;
+                }
+                $.ajax({
+                    url: '/TankMovements/DeactivateMonitoring',
+                    type: 'POST',
+                    data: { tankNumber: tankNumber },
+                    success: function(response) {
+                        if (response.isValid) {
+                            alert('Monitoring stopped for ' + tankNumber);
+                            dbLoadActiveAlarms();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    }
+                });
+            }
+
+            // ========================================
+            // HISTORY TAB FUNCTIONS
+            // ========================================
+            function dbLoadHistory(reset) {
+                if (reset) {
+                    dbHistoryCurrentPage = 1;
+                    dbHistoryData = [];
+                    dbHistoryHasMore = true;
+                    $('#dbHistoryContainer').html('');
+                    $('#dbSelectAllHistory').prop('checked', false);
+                }
+
+                if (!dbHistoryHasMore || dbHistoryLoading) return;
+
+                dbHistoryLoading = true;
+                $('#dbHistoryLoader').show();
+
+                $.ajax({
+                    url: '/TankMovements/GetAlarmHistory',
+                    type: 'GET',
+                    data: { page: dbHistoryCurrentPage, pageSize: dbHistoryPageSize },
+                    success: function(response) {
+                        dbHistoryLoading = false;
+                        $('#dbHistoryLoader').hide();
+
+                        if (response.isValid && response.data && response.data.length > 0) {
+                            dbHistoryData = dbHistoryData.concat(response.data);
+                            dbHistoryHasMore = response.hasMore;
+                            dbHistoryCurrentPage++;
+
+                            dbRenderHistoryCards(response.data, false);
+
+                            if (dbHistoryData.length > 0) {
+                                $('#dbHistoryBulkActions').show();
+                            }
+
+                            if (!dbHistoryHasMore) {
+                                $('#dbHistoryEndMessage').show();
+                            }
+                        } else {
+                            if (dbHistoryCurrentPage === 1) {
+                                $('#dbHistoryContainer').html(
+                                    '<div class="alert alert-secondary text-center">' +
+                                    '<i class="fas fa-inbox fa-3x mb-3"></i>' +
+                                    '<h5>No History Records</h5>' +
+                                    '<p class="mb-0">No stopped monitoring records found</p>' +
+                                    '</div>'
+                                );
+                                $('#dbHistoryBulkActions').hide();
+                            }
+                            dbHistoryHasMore = false;
+                            $('#dbHistoryEndMessage').show();
+                        }
+                    },
+                    error: function() {
+                        dbHistoryLoading = false;
+                        $('#dbHistoryLoader').hide();
+                    }
+                });
+            }
+
+            function dbRenderHistoryCards(records, clearFirst) {
+                if (clearFirst) {
+                    $('#dbHistoryContainer').html('');
+                }
+
+                var html = '';
+
+                records.forEach(function(record) {
+                    html += '<div class="card border-secondary mb-3" id="db-history-card-' + record.id + '" data-id="' + record.id + '">';
+                    html += '<div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">';
+                    html += '<div>';
+                    html += '<input type="checkbox" class="db-history-checkbox mr-2" data-id="' + record.id + '" onchange="dbUpdateSelectedCount()">';
+                    html += '<strong>Tank: ' + record.tankNumber + '</strong>';
+                    html += '</div>';
+                    html += '<span class="badge badge-light text-secondary">STOPPED</span>';
+                    html += '</div>';
+                    html += '<div class="card-body">';
+                    html += '<div class="row">';
+                    html += '<div class="col-md-6">';
+                    html += '<p class="mb-1"><strong>Stopped At:</strong> ' + (record.timestamp ? moment(record.timestamp).format('DD MMM YYYY HH:mm') : 'N/A') + '</p>';
+                    html += '<p class="mb-1"><strong>Last Flowrate Change:</strong> ' + (record.lastFlowrateChangeTime ? moment(record.lastFlowrateChangeTime).format('DD MMM YYYY HH:mm') : 'N/A') + '</p>';
+                    html += '</div>';
+                    html += '<div class="col-md-6">';
+                    html += '<div class="form-group mb-1">';
+                    html += '<label class="mb-0"><strong>Target Level (mm):</strong></label>';
+                    html += '<input type="number" class="form-control form-control-sm db-edit-target-level" data-id="' + record.id + '" value="' + (record.targetLevel || '') + '" disabled />';
+                    html += '</div>';
+                    html += '<div class="form-group mb-1">';
+                    html += '<label class="mb-0"><strong>Threshold (min):</strong></label>';
+                    html += '<input type="number" class="form-control form-control-sm db-edit-threshold" data-id="' + record.id + '" value="' + (record.stagnantThresholdMinutes || 5) + '" disabled />';
+                    html += '</div>';
+                    html += '</div>';
+                    html += '</div>';
+                    html += '<hr />';
+                    html += '<div class="text-right">';
+                    html += '<button class="btn btn-warning btn-sm db-btn-edit" data-id="' + record.id + '" onclick="dbEditHistoryCard(' + record.id + ')">';
+                    html += '<i class="fas fa-edit"></i> Edit</button> ';
+                    html += '<button class="btn btn-danger btn-sm db-btn-delete" data-id="' + record.id + '" onclick="dbDeleteHistoryCard(' + record.id + ')">';
+                    html += '<i class="fas fa-trash"></i> Delete</button>';
+                    html += '<button class="btn btn-success btn-sm db-btn-save" data-id="' + record.id + '" onclick="dbSaveHistoryCard(' + record.id + ')" style="display: none;">';
+                    html += '<i class="fas fa-save"></i> Save</button>';
+                    html += '</div>';
+                    html += '</div>';
+                    html += '</div>';
+                });
+
+                $('#dbHistoryContainer').append(html);
+            }
+
+            function dbEditHistoryCard(id) {
+                var card = $('#db-history-card-' + id);
+                card.find('.db-edit-target-level[data-id="' + id + '"]').prop('disabled', false);
+                card.find('.db-edit-threshold[data-id="' + id + '"]').prop('disabled', false);
+                card.find('.db-btn-edit[data-id="' + id + '"]').hide();
+                card.find('.db-btn-save[data-id="' + id + '"]').show();
+            }
+
+            function dbSaveHistoryCard(id) {
+                var card = $('#db-history-card-' + id);
+                var targetLevel = card.find('.db-edit-target-level[data-id="' + id + '"]').val();
+                var threshold = card.find('.db-edit-threshold[data-id="' + id + '"]').val();
+
+                $.ajax({
+                    url: '/TankMovements/UpdateHistoryRecord',
+                    type: 'POST',
+                    data: { id: id, targetLevel: targetLevel, stagnantThresholdMinutes: threshold },
+                    success: function(response) {
+                        if ( response.isValid) {
+                            card.find('.db-edit-target-level[data-id="' + id + '"]').prop('disabled', true);
+                            card.find('.db-edit-threshold[data-id="' + id + '"]').prop('disabled', true);
+                            card.find('.db-btn-edit[data-id="' + id + '"]').show();
+                            card.find('.db-btn-save[data-id="' + id + '"]').hide();
+                            alert('Record updated successfully');
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    }
+                });
+            }
+
+            function dbDeleteHistoryCard(id) {
+                if (!confirm('Delete this history record?')) return;
+
+                $.ajax({
+                    url: '/TankMovements/DeleteHistoryRecord',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function(response) {
+                        if (response.isValid) {
+                            $('#db-history-card-' + id).fadeOut(300, function() { $(this).remove(); });
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    }
+                });
+            }
+
+            function dbToggleSelectAllHistory() {
+                var isChecked = $('#dbSelectAllHistory').is(':checked');
+                $('.db-history-checkbox').prop('checked', isChecked);
+                dbUpdateSelectedCount();
+            }
+
+            function dbUpdateSelectedCount() {
+                var count = $('.db-history-checkbox:checked').length;
+                $('#dbSelectedCount').text(count);
+                $('#dbBtnBulkDelete').prop('disabled', count === 0);
+            }
+
+            function dbBulkDeleteHistory() {
+                var ids = [];
+                $('.db-history-checkbox:checked').each(function() {
+                    ids.push($(this).data('id'));
+                });
+
+                if (ids.length === 0) {
+                    alert('No records selected');
+                    return;
+                }
+
+                if (!confirm('Delete ' + ids.length + ' selected records?')) return;
+
+                $.ajax({
+                    url: '/TankMovements/BulkDeleteHistory',
+                    type: 'POST',
+                    data: { ids: ids },
+                    traditional: true,
+                    success: function(response) {
+                        if (response.isValid) {
+                            dbLoadHistory(true);
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    }
+                });
+            }
+
+            // ========================================
+            // SETTINGS TAB FUNCTIONS
+            // ========================================
+            function loadDbTanksWithRecentROT() {
+
+                var select = $('#dbAlarmTankSelect');
+                select.html('<option value="">-- Loading... --</option>');
+                select.prop('disabled', true);
+                $('#dbSelectedTicketInfo').text('');
+                $('#dbSelectedAlarmTicketId').val('');
+
+                $.ajax({
+                    url: '/TankMovements/GetTanksWithRecentROT',
+                    type: 'GET',
+                    data: { days: 3 },
+                    success: function(response) {
+                        select.prop('disabled', false);
+
+                        if (response.isValid && response.data && response.count > 0) {
+                            var html = '<option value="">-- Select Tank (' + response.count + ' available) --</option>';
+                            response.data.forEach(function(tank) {
+                                html += '<option value="' + tank.tankNumber + '" data-ticket-id="' + tank.ticketId + '" data-ticket-no="' + tank.ticketNumber + '">';
+                                html += tank.tankNumber + ' - ' + tank.ticketNumber;
+                                html += '</option>';
+                            });
+                            select.html(html);
+                        } else {
+                            select.html('<option value="">-- No ROT OPEN tickets in the last 3 days --</option>');
+                        }
+                    },
+                    error: function() {
+                        select.prop('disabled', false);
+                        select.html('<option value="">-- Error loading --</option>');
+                    }
+                });
+            }
+
+            function onDbAlarmTankSelected() {
+                var select = $('#dbAlarmTankSelect');
+                var selectedOption = select.find('option:selected');
+                var tankName = select.val();
+
+                if (!tankName) {
+                    $('#dbSelectedTicketInfo').text('');
+                    $('#dbSelectedAlarmTicketId').val('');
+                    $('#dbSettingsFormGroup').hide();
+                    dbPendingTicketId = null;
+                    return;
+                }
+
+                var ticketId = selectedOption.data('ticket-id');
+                var ticketNo = selectedOption.data('ticket-no');
+
+                $('#dbSelectedAlarmTicketId').val(ticketId || '');
+                dbPendingTicketId = ticketId || null;
+
+                if (ticketNo) {
+                    $('#dbSelectedTicketInfo').html('<i class="fas fa-ticket-alt text-success"></i> Ticket: <strong>' + ticketNo + '</strong> (ID: ' + ticketId + ')');
+                }
+
+                $('#dbSettingsFormGroup').show();
+                loadDbTankSettings(tankName);
+            }
+
+            function loadDbTankSettings(tankName) {
+                $('#dbCurrentSettingsInfo').html('<div class="spinner-border spinner-border-sm"></div> Loading...');
+
+                $.ajax({
+                    url: '/TankMovements/GetSettings',
+                    type: 'GET',
+                    data: { tankName: tankName },
+                    success: function(response) {
+                        if (response.isValid && response.data) {
+                            var data = response.data;
+                            $('#dbTargetLevel').val(data.targetLevel || '');
+                            $('#dbStagnantThreshold').val(data.stagnantThresholdMinutes || 5);
+                            $('#dbIsManuallyConfigured').prop('checked', data.isManuallyConfigured || false);
+
+                            var statusHtml = '<div class="alert alert-' + (data.status ? 'success' : 'secondary') + '">';
+                            statusHtml += '<strong>Current Status:</strong> ' + (data.status ? '? Active' : '?? Inactive');
+                            if (data.stagnantAlarm) {
+                                statusHtml += ' | <span class="text-danger"><strong>?? STAGNANT ALARM ACTIVE!</strong></span>';
+                            }
+                            if (data.lastFlowrateChangeTime) {
+                                statusHtml += '<br /><small>Last Flowrate Change: ' + moment(data.lastFlowrateChangeTime).format('DD MMM YYYY HH:mm') + '</small>';
+                            }
+                            statusHtml += '</div>';
+
+                            // Add Stop Monitoring button if active
+                            if (data.status) {
+                                statusHtml += '<div class="alert alert-warning">';
+                                statusHtml += '<i class="fas fa-info-circle"></i> <strong>Monitoring Active</strong><br />';
+                                statusHtml += '<small>Click the button below to stop monitoring and deactivate alarm for this tank.</small><br />';
+                                statusHtml += '<button class="btn btn-danger btn-sm mt-2" onclick="dbStopMonitoring(\'' + tankName + '\')">';
+                                statusHtml += '<i class="fas fa-stop"></i> Stop Monitoring</button>';
+                                statusHtml += '</div>';
+                            }
+
+                            $('#dbCurrentSettingsInfo').html(statusHtml);
+                        } else {
+                            $('#dbTargetLevel').val('');
+                            $('#dbStagnantThreshold').val(5);
+                            $('#dbIsManuallyConfigured').prop('checked', true);
+                            $('#dbCurrentSettingsInfo').html('<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> No Tank Movement record found for this tank. Settings will be created when you save.</div>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('#dbCurrentSettingsInfo').html('<div class="alert alert-danger">Error: ' + error + '</div>');
+                    }
+                });
+            }
+
+            function saveDbAlarmSettings() {
+                var tankName = $('#dbAlarmTankSelect').val();
+
+                if (!tankName) {
+                    alert('Please select a tank');
+                    return;
+                }
+
+                var targetLevel = $('#dbTargetLevel').val() ? parseInt($('#dbTargetLevel').val()) : null;
+                var stagnantMinutes = $('#dbStagnantThreshold').val() ? parseInt($('#dbStagnantThreshold').val()) : 5;
+                var isManuallyConfigured = $('#dbIsManuallyConfigured').is(':checked');
+                var ticketId = $('#dbSelectedAlarmTicketId').val() || dbPendingTicketId || null;
+
+                var btnSave = $('#btnSaveDbAlarmSettings');
+                btnSave.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Saving...');
+
+                $.ajax({
+                    url: '/TankMovements/UpdateSettings',
+                    type: 'POST',
+                    data: {
+                        tankName: tankName,
+                        targetLevel: targetLevel,
+                        stagnantThresholdMinutes: stagnantMinutes,
+                        isManuallyConfigured: isManuallyConfigured,
+                        tankTicketId: ticketId
+                    },
+                    success: function(response) {
+                        btnSave.prop('disabled', false).html('<i class="fas fa-save"></i> Save Settings');
+
+                        if (response.isValid) {
+                            alert('? Alarm settings saved successfully!');
+                            dbPendingTicketId = null;
+                            $('#dbSelectedAlarmTicketId').val('');
+                            closeDashboardAlarmModal();
+                        } else {
+                            alert('? Error: ' + (response.message || 'Failed to save'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        btnSave.prop('disabled', false).html('<i class="fas fa-save"></i> Save Settings');
+                        alert('Error: ' + error);
+                    }
+                });
+            }
+
+        </script>
+    }
+
+</head>
+
+<!-- Begin Page Content -->
+<div class="container-fluid" id="tank-container">
+
+    <!-- Page Heading -->
+    <div class="d-flex align-items-center justify-content-between mb-4 dashboard-heading">
+        <h1 class="mb-0 text-gray-800">Dashboard</h1>
+        <div class="d-flex">
+            <button type="button"
+                    onclick="document.location.reload(true)"
+                    class="btn btn-info shadow-sm btn-reload">
+                <i class="fas fa-redo-alt mr-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Tank Monitoring -->
+    <div class="row">
+        @foreach (var tank in ViewBag.Tanks)
+        {
+            <!-- ✅ OPTIMIZED GRID -->
+            <div class="col-xxl-3 col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-4">
+                <div class="card shadow bg-white rounded tank-card">
+                    <!-- ✅ Tank Image Container -->
+                    <div class="tank-image-container">
+                        <img src="~/assets/img/tank-mini2.webp"
+                             class="tank-img-top"
+                             style="border-bottom:15px solid @tank.HexColor;"
+                             alt="@tank.Name">
+
+                        <!-- ✅ ALARM INDICATOR - POSISI KIRI ATAS (seperti gambar) -->
+                        <div id="alarmContainer@(tank.Tank_Name)" class="alarm-indicator-container" style="display: none;">
+                            <!-- Alarm badges will be dynamically inserted here -->
+                        </div>
+
+                        <!-- Tank Level Progress Bar (LIQUID LEVEL) -->
+                        <div class="tank-level-container">
+                            <div id="progLevelText@(tank.Tank_Name)" class="tank-level-percentage">
+                                0%
+                            </div>
+
+                            <!-- Progress bar (no text inside) -->
+                            <div class="tank-progress-vertical">
+                                <div class="progress">
+                                    <div id="progLevel@(tank.Tank_Name)"
+                                         class="progress-bar progress-bar-striped progress-bar-animated"
+                                         role="progressbar"
+                                         style="height: 0%; background-color: @tank.HexColor;"
+                                         aria-valuenow="0"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ✅ Water Level Progress Bar -->
+                        <div class="tank-water-container">
+                            <div id="progWaterText@(tank.Tank_Name)" class="tank-water-percentage">
+                                0%
+                            </div>
+                            <div class="tank-water-vertical">
+                                <div class="progress">
+                                    <div id="progWater@(tank.Tank_Name)"
+                                         class="progress-bar progress-bar-striped progress-bar-animated"
+                                         role="progressbar"
+                                         style="height: 0%; background-color: #1e90ff;"
+                                         aria-valuenow="0"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ✅ Tank Operation Button (Top Right) -->
+                        <button type="button" 
+                                id="btnOperation@(tank.Tank_Name)" 
+                                class="tank-operation-btn btn btn-secondary btn-sm"
+                                onclick="OpenOperationalStatus('@tank.Tank_Name');"
+                                title="Update Tank Operation">
+                            <i class="fas fa-cogs"></i> IDLE
+                        </button>
+
+                        <!-- Tank Overlay Content -->
+                        <div class="tank-card-overlay">
+                            <div class="tank-overlay-caption">
+                                <div class="row g-0 w-100">
+                                    <!-- Column 1: Flowrate -->
+                                    <div id="col-flowrate-@tank.Tank_Name" class="col-4 tank-col-flowrate flowrate-center">
+                                        <p class="tank-flowrate-text" id="@tank.FlowrateId">
+                                            ... KL/H
+                                        </p>
+                                        <div id="@tank.ImageId" class="tank-arrow-img"></div>
+                                    </div>
+
+                                    <!-- Column 2: Tank Info -->
+                                    <div class="col-4 tank-col-info">
+                                        <p class="tank-name-text">
+                                            @tank.Name
+                                        </p>
+
+                                        <p class="tank-level-text" id="@tank.TankId">
+                                            <i class="fas fa-ruler-vertical tank-value-icon"></i>
+                                            <span class="tank-value-number">Initializing...</span>
+                                        </p>
+
+                                        <p class="tank-temp-text" id="@tank.TempId">
+                                            <i class="fas fa-thermometer-half tank-value-icon"></i>
+                                            <span class="tank-value-number">... °C</span>
+                                        </p>
+
+                                        <p class="tank-density-text" id="@tank.DensityId">
+                                            <i class="fas fa-weight-hanging tank-value-icon"></i>
+                                            <span class="tank-value-number">... kg/m³</span>
+                                        </p>
+                                    </div>
+
+                                    <!-- Column 3: Alert (DIKOSONGKAN - dipindah ke kiri atas) -->
+                                    <div class="col-4 tank-col-alert">
+                                        <div id="@tank.AlertId" class="tank-alert-icon"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Name -->
+                    <div class="card-body tank-product-name">
+                        <small class="card-title d-block text-center">
+                            @tank.ProductName
+                        </small>
+                    </div>
+
+                    <!-- Details Button -->
+                    <button type="button"
+                            class="card-footer btn btn-primary"
+                            onclick="OpenModal(this);"
+                            value="@tank.TankId">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        @tank.Name Details
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+<!-- End Tank Monitoring -->
+
+@* ✅ Modal Detail Tank - COMPACT VERSION *@
+<div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true" style="color:black; font-family: 'Roboto', sans-serif;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel"><b>Tank Level Details</b></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="container-fluid p-0">
+                    <div class="row">
+                        <!-- ✅ Left Column: Tank Image (COMPACT) -->
+                        <div class="col-md-5">
+                            <div class="position-relative">
+                                <img class="img-fluid tank-modal-image" src="~/assets/img/tank-mini2.webp" alt="Tank" />
+                                <div class="card-img-overlay">
+                                    <div class="row">
+                                        <div class="col-8 w-100">
+                                            <p class="card-text font-weight-bolder mb-0">Flowrate</p>
+                                            <p class="card-text font-weight-bolder mb-0" id="tbFlowrate"></p>
+                                            <div id="tbImage"></div>
+                                        </div>
+                                        <div id="tbAlert" class="col-4"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-left mb-0">Percentage Level</p>
+                            <div class="progress">
+                                <div id="progLevel" class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- ✅ Right Column: Tank Data (COMPACT TABLE) -->
+                        <div class="col-md-7">
+                            <table class="table table-borderless table-sm mb-0">
+                                <tbody>
+                                    <tr>
+                                        <th>Name</th>
+                                        <td>:</td>
+                                        <td id="tbName">~</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Product</th>
+                                        <td>:</td>
+                                        <td id="tbProduct">~</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <td>:</td>
+                                        <td id="tbTimeStamp">~</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Level (mm)</th>
+                                        <td>:</td>
+                                        <td id="tbLevel">~</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Water (mm)</th>
+                                        <td>:</td>
+                                        <td id="tbWater">~</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Mat Temp (°C)</th>
+                                        <td>:</td>
+                                        <td id="tbTemp">~</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Density (kg/m³)</th>
+                                        <td>:</td>
+                                        <td id="tbDensity">~</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Volume (L)</th>
+                                        <td>:</td>
+                                        <td id="tbVolume">~</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================
+     MODAL: Tank Alarm Management (Dashboard)
+     Same as TankTicket page - with 3 tabs
+     ======================================== -->
+<div class="modal fade" id="dashboardAlarmSettingsModal" tabindex="-1" role="dialog" aria-labelledby="dashboardAlarmSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="dashboardAlarmSettingsModalLabel">
+                    <i class="fas fa-bell"></i> Tank Alarm Management
+                </h5>
+                <button type="button" class="close text-white" onclick="closeDashboardAlarmModal();" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" id="dashboardAlarmTabs" role="tablist" style="margin-left: 15px; margin-right: 15px; margin-top: 10px;">
+                <li class="nav-item">
+                    <a class="nav-link active" id="dbActiveAlarmsTab" data-toggle="tab" href="#dbActiveAlarmsPanel" role="tab" onclick="switchToDashboardActiveAlarmsTab()">
+                        <i class="fas fa-exclamation-triangle"></i> Active Alarms <span id="dbAlarmBadge" class="badge badge-danger">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="dbHistoryTab" data-toggle="tab" href="#dbHistoryPanel" role="tab" onclick="switchToDashboardHistoryTab()">
+                        <i class="fas fa-history"></i> History
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="dbSettingsTab" data-toggle="tab" href="#dbSettingsPanel" role="tab" onclick="switchToDashboardSettingsTab()">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+            </ul>
+
+            <div class="modal-body">
+                <!-- Tab Content -->
+                <div class="tab-content" id="dashboardAlarmTabContent">
+
+                    <!-- Panel 1: Active Alarms -->
+                    <div class="tab-pane fade show active" id="dbActiveAlarmsPanel" role="tabpanel">
+                        <div id="dbActiveAlarmsContainer">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-warning" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading active alarms...</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3" id="dbActiveAlarmsActions" style="display: none;">
+                            <button type="button" class="btn btn-success btn-sm" onclick="dbBulkAckAllAlarms()">
+                                <i class="fas fa-check-double"></i> ACK All Alarms
+                            </button>
+                            <button type="button" class="btn btn-info btn-sm" onclick="dbRefreshActiveAlarms()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Panel 2: History -->
+                    <div class="tab-pane fade" id="dbHistoryPanel" role="tabpanel">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> View and manage stopped Tank Movement records. Use lazy loading (10 records per page).
+                        </div>
+
+                        <div id="dbHistoryContainer">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading history...</p>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Delete Actions -->
+                        <div class="mt-3" id="dbHistoryBulkActions" style="display: none;">
+                            <div class="form-check d-inline-block mr-3">
+                                <input class="form-check-input" type="checkbox" id="dbSelectAllHistory" onchange="dbToggleSelectAllHistory()">
+                                <label class="form-check-label" for="dbSelectAllHistory">
+                                    <strong>Select All</strong>
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="dbBulkDeleteHistory()" id="dbBtnBulkDelete" disabled>
+                                <i class="fas fa-trash"></i> Delete Selected (<span id="dbSelectedCount">0</span>)
+                            </button>
+                        </div>
+
+                        <div class="text-center py-3" id="dbHistoryLoader" style="display: none;">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                            <p class="mt-2">Loading more records...</p>
+                        </div>
+
+                        <div class="text-center py-3" id="dbHistoryEndMessage" style="display: none;">
+                            <p class="text-muted"><i class="fas fa-check-circle"></i> All records loaded</p>
+                        </div>
+                    </div>
+
+                    <!-- Panel 3: Settings -->
+                    <div class="tab-pane fade" id="dbSettingsPanel" role="tabpanel">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Configure alarm settings for Tank Movement monitoring (ROT operations).
+                            <br/><small class="text-muted">Only tanks with <strong>ROT OPEN</strong> tickets in the last 3 days are shown.</small>
+                        </div>
+
+                        <form id="dbAlarmSettingsForm">
+                            <div class="form-group">
+                                <label for="dbAlarmTankSelect"><strong>Select Tank (ROT OPEN):</strong></label>
+                                <div class="input-group">
+                                    <select class="form-control" id="dbAlarmTankSelect" name="tankName" required onchange="onDbAlarmTankSelected()">
+                                        <option value="">-- Loading tanks... --</option>
+                                    </select>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="loadDbTanksWithRecentROT()" title="Refresh tank list">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <small id="dbSelectedTicketInfo" class="form-text text-muted"></small>
+                            </div>
+                            <input type="hidden" id="dbSelectedAlarmTicketId" value="" />
+
+                            <div id="dbSettingsFormGroup" style="display: none;">
+                                <hr />
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="dbTargetLevel"><strong>Target Level (mm):</strong></label>
+                                            <input type="number" class="form-control" id="dbTargetLevel" name="targetLevel" placeholder="e.g., 5000" />
+                                            <small class="form-text text-muted">Leave empty to use Safe Capacity.</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="dbStagnantThreshold"><strong>Stagnant Threshold (minutes):</strong></label>
+                                            <input type="number" class="form-control" id="dbStagnantThreshold" name="stagnantThresholdMinutes" placeholder="Default: 5" min="1" max="60" />
+                                            <small class="form-text text-muted">Alarm will trigger if no flowrate for this duration.</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dbIsManuallyConfigured" name="isManuallyConfigured" checked />
+                                    <label class="form-check-label" for="dbIsManuallyConfigured">
+                                        <strong>Lock Manual Settings</strong> (prevent auto-polling from overwriting)
+                                    </label>
+                                </div>
+
+                                <div class="alert alert-secondary mt-3">
+                                    <small>
+                                        <strong>Note:</strong> If you uncheck "Lock Manual Settings", the system will automatically update settings from new tickets (FDM Web compatibility mode).
+                                    </small>
+                                </div>
+
+                                <div id="dbCurrentSettingsInfo" class="mt-3"></div>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDashboardAlarmModal();"><i class="fas fa-times"></i> Close</button>
+                <button type="button" class="btn btn-warning" id="btnSaveDbAlarmSettings" onclick="saveDbAlarmSettings()" style="display: none;">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Tank Operation Modal -->
+<div class="modal fade" id="form-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Update Operational Status</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>

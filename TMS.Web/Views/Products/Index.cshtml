@@ -1,0 +1,195 @@
+@model TMS.Models.Product
+@using TMS.Web.Authorization
+
+@{
+    ViewData["Title"] = "Product Configuration";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+}
+
+<head>
+    @section Scripts{
+        <script type="text/javascript" asp-append-version="true">
+            // ? Check if current user can modify data (admin only)
+            var canModifyData = @Json.Serialize(User.CanModifyData());
+
+            var oTable;
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                oTable = $('#tb-product').DataTable(
+                    {
+                        "serverSide": true, // for process server side
+                        "scrollY": "500px",
+                        "scrollX": true,
+                        "autoWidth": false,
+                        "scrollCollapse": true,
+                        "paging": true,
+                        "fixedColumns": true,
+                        "processing": true,
+                        "ajax": {
+                            "url": "@Url.Action("LoadData")",
+                            "type": "POST",
+                            "datatype": "json",
+                            "dataSrc": function (json) {
+                                if (json.data && json.data.length > 0) {
+                                    console.log("Product LoadData - First row keys:", Object.keys(json.data[0]));
+                                }
+                                return json.data;
+                            }
+                        },
+                        "columnDefs": [{
+                            "targets": 0,
+                            "visible": false,
+                            "searchable": false
+                        }],
+                        "columns": [
+                            { "data": "Product_ID", "name": "Product_ID", "autoWidth": true },
+                            {
+                                data: null,
+                                render: function (data, type, full, meta) {
+                                    var edit = canModifyData ? "<button type='button' class='btn btn-warning' onclick=UpdateData('" + full.Product_ID + "');><i class='fas fa-edit fa-lg'></i> Edit</button> " : "";
+                                    var dlete = canModifyData ? "<button type='button' class='btn btn-danger'onclick=DeleteData('" + full.Product_ID + "');><i class='fas fa-trash-alt'></i>Delete</button>" : "";
+                                    return edit + dlete;
+                                }
+                            },
+                            { "data": "Product_Code", "name": "Product_Code", "autoWidth": true },
+                            { "data": "Product_Name", "name": "Product_Name", "autoWidth": true },
+                            { "data": "HexColor", "name": "HexColor", "autoWidth": true },
+                            { "data": "Default_Density", "name": "Default_Density", "autoWidth": true },
+                            { "data": "Default_Temp", "name": "Default_Temp", "autoWidth": true },
+                        ],
+                        "columnDefs": [
+                            {
+                                "targets": 0,
+                                "visible": false,
+                                "searchable": false
+                            }
+                        ]
+                    }); 
+
+            }); //end document ready
+            //update data
+            function UpdateData(productId) {
+                var toSend =
+                {
+                    id: productId
+                };
+                $.ajax({
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "@Url.Action("AddOrEdit")",
+                    data: toSend,
+                    success: function (res) {
+                        $("#form-modal").modal();
+                        $("#form-modal .modal-body").html(res);
+                        $("#form-modal .modal-title").html('Edit Product');
+                        $("#form-modal").modal('show');
+                    },
+                    error: function (res) {
+                    }
+                })
+            };
+            // end update data
+            //start delete data
+            function DeleteData(productId) {
+                if (confirm('Are you sure want to delete this data ?')) {
+                    var toSend =
+                    {
+                        id: productId
+                    };
+                    $.ajax({
+                        type: 'POST',
+                        url: '@Url.Action("Delete")',
+                        data: toSend,
+                        success: function (res) {
+                            oTable.ajax.reload(null, false);
+                        },
+                        error: function (err) {
+                        }
+                    })
+                }
+            }
+        </script>
+        <script type="text/javascript" asp-append-version="true">
+            function reset() {
+                document.getElementById("product").value = "";
+                document.getElementById("tank-name").value = "";
+                location.reload()
+            }
+
+        </script>
+
+        <script type="text/javascript" asp-append-version="true">
+            function reloadpage() {
+                location.reload()
+            }
+
+            //reload data
+            function reloadTable() {
+                oTable.ajax.reload(null, false);
+            }
+        </script>
+    }
+</head>
+<!-- Begin Page Content -->
+<div class="container-fluid">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Fuel Oil</h1>
+        <a value="reload" onclick="reloadTable()" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
+            <i class="fas fa-redo-alt"></i>
+        </a>
+    </div>
+
+    <!-- Submain Content -->
+    <div class="card shadow-lg rounded" style="width: 100%;">
+        <div class="card-header bg-gradient-info"></div>
+        <div class="card-body">
+
+            <!-- Tank Filter -->
+            <form>
+                <div class="form-row">
+                    <div class="col col-md-3">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="Product-Code">Product Name</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Insert Product Code" aria-label="Product-Code" id="product-code" aria-describedby="Product-Code">
+                        </div>
+                    </div>
+                    <div class="col col-md-3">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="Product-Name">Product Name</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Insert Product Name" aria-label="Product-Name" id="product-name" aria-describedby="Product-Name">
+                        </div>
+                    </div>
+                    <div class="col col-md-3">
+                        <div class="input-group">
+                            <button type="reset" class="btn btn-warning" style="width: 100%;" onclick="javascript:reset();"><i class="fas fa-undo-alt"></i> Reset Filter</button>
+                        </div>
+                    </div>
+                    @* ? Only admins can create *@
+                    @if (User.CanModifyData())
+                    {
+                        <div class="col col-md-3">
+                            <div class="input-group">
+                                <button type="button" class="btn btn-primary" style="width: 100%;" onclick="showInPopup('@Url.Action("AddOrEdit","Products",null,Context.Request.Scheme)','Add New Products')"><i class="fas fa-plus"></i> New</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </form>
+            <!-- End Tank Filter -->
+            <!-- Divider -->
+            <hr class="sidebar-divider my-3">
+            <!-- Tank Table -->
+            @await Html.PartialAsync("_ViewAll", Model)
+            <!-- End Tank table -->
+        </div>
+    </div>
+    <!-- End Submain Content -->
+
+</div>
+<!-- End Page Content -->

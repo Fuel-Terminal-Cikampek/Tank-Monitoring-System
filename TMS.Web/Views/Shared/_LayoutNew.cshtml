@@ -1,0 +1,950 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+@using Microsoft.AspNetCore.Identity
+@using TMS.Web.Areas.Identity.Data
+@using Microsoft.Extensions.Configuration
+
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+@inject IConfiguration Configuration
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TMS - @ViewData["Title"]</title>
+    <partial name="_Styles" />
+    <link rel="icon" href="~/assets/img/citia-logo.webp">
+    @RenderSection("Styles", required: false)
+
+    <script>
+
+        // ========================================
+        // ✅ ALARM SYSTEM v4.0 - GLOBAL ACK + ALARM LOG + DASHBOARD SYNC
+        // - ACK button: Mematikan SEMUA alarm (global, semua device)
+        // - Bell icon: Alarm Log (aktif + yang sudah di-ACK)
+        // - Dashboard sync: Alarm dari dashboard cards juga ditampilkan di log
+        // ========================================
+
+        var currentAlarms = [];      // Alarm aktif (masih berbunyi)
+        var alarmHistory = [];       // Alarm yang sudah di-ACK
+        var allAlarmsForDisplay = []; // Gabungan untuk display
+        var alarmAudioPlaying = false;
+
+        // ✅ Wait for window to fully load
+        window.addEventListener('load', function() {
+            console.log('[Alarm v4] Window loaded, initializing...');
+            
+            if (typeof jQuery === 'undefined') {
+                console.error('[Alarm v4] jQuery not loaded!');
+                return;
+            }
+            
+            console.log('[Alarm v4] Starting alarm polling...');
+            
+            // Initial check
+            checkAlarms();
+            
+            // Poll every 3 seconds
+            setInterval(checkAlarms, 3000);
+        });
+
+        // ✅ Main alarm check function
+        function checkAlarms() {
+            if (typeof jQuery === 'undefined') return;
+            var $ = jQuery;
+            
+            $.ajax({
+                url: '/Alarm/GetAllActiveAlarms',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    console.log('[Alarm v4] Response:', response);
+                    
+                    // Update data
+                    currentAlarms = response.data || [];
+                    alarmHistory = response.history || [];
+                    allAlarmsForDisplay = response.allAlarms || [];
+                    
+                    // Update UI
+                    updateAlarmUI();
+                    
+                    // Play/stop audio based on ACTIVE alarms only
+                    if (response.hasActiveAlarms && currentAlarms.length > 0) {
+                        playAlarmAudio();
+                    } else {
+                        stopAlarmAudio();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[Alarm v4] Error:', error);
+                }
+            });
+        }
+
+        // ✅ Update alarm UI (bell icon badge + dropdown list)
+        function updateAlarmUI() {
+            var $ = jQuery;
+            var activeCount = currentAlarms.length;
+            var historyCount = alarmHistory.length;
+            var totalCount = activeCount + historyCount;
+            
+            // ========================================
+            // 1. Update badge count (hanya alarm AKTIF)
+            // ========================================
+            var badge = $('#count-alarm');
+            if (activeCount > 0) {
+                badge.text(activeCount).show();
+            } else {
+                badge.text('').hide();
+            }
+            
+            // ========================================
+            // 2. Update dropdown list (SEMUA alarm = log)
+            // ========================================
+            var container = $('#alarms-container');
+            container.empty();
+            
+            if (totalCount === 0) {
+                container.append(`
+                    <a class="dropdown-item d-flex align-items-center" href="#">
+                        <div>
+                            <span class="font-weight-bold text-success">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Tidak ada alarm
+                            </span>
+                        </div>
+                    </a>
+                `);
+            } else {
+                // ========================================
+                // Section: ALARM AKTIF (yang masih berbunyi)
+                // ========================================
+                if (activeCount > 0) {
+                    container.append(`
+                        <div class="dropdown-header bg-danger text-white py-2">
+                            <i class="fas fa-volume-up mr-2"></i>
+                            ALARM AKTIF (${activeCount})
+                        </div>
+                    `);
+                    
+                    currentAlarms.forEach(function(alarm) {
+                        var colorClass = alarm.isCritical ? 'text-danger' : 'text-warning';
+                        var icon = getAlarmIcon(alarm.alarmCategory, alarm.alarmType);
+                        var timeStr = alarm.timestamp ? new Date(alarm.timestamp).toLocaleTimeString('id-ID') : '';
+                        var categoryBadge = getCategoryBadge(alarm.alarmCategory);
+                        
+                        container.append(`
+                            <a class="dropdown-item d-flex align-items-center py-2 border-left border-danger" 
+                               href="#" style="border-left-width: 4px !important;">
+                                <div class="mr-3">
+                                    <i class="fas ${icon} ${colorClass}" style="font-size: 1.5rem;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="font-weight-bold ${colorClass} mr-2">${alarm.tankNumber}</span>
+                                        ${categoryBadge}
+                                    </div>
+                                    <div class="font-weight-bold ${colorClass}">${alarm.alarmType || 'Unknown'}</div>
+                                    <small class="text-muted d-block">${alarm.message || ''}</small>
+                                    <small class="text-muted"><i class="fas fa-clock mr-1"></i>${timeStr}</small>
+                                </div>
+                                <div>
+                                    <span class="badge badge-danger blink-animation">AKTIF</span>
+                                </div>
+                            </a>
+                        `);
+                    });
+                }
+                
+                // ========================================
+                // Section: ALARM HISTORY (yang sudah di-ACK)
+                // ========================================
+                if (historyCount > 0) {
+                    container.append(`
+                        <div class="dropdown-header bg-secondary text-white py-2 mt-2">
+                            <i class="fas fa-history mr-2"></i>
+                            RIWAYAT ALARM (${historyCount})
+                        </div>
+                    `);
+                    
+                    alarmHistory.forEach(function(alarm) {
+                        var timeStr = alarm.timestamp ? new Date(alarm.timestamp).toLocaleTimeString('id-ID') : '';
+                        var categoryBadge = getCategoryBadge(alarm.alarmCategory, true);
+                        
+                        container.append(`
+                            <a class="dropdown-item d-flex align-items-center py-2 text-muted" href="#">
+                                <div class="mr-3">
+                                    <i class="fas fa-bell-slash text-secondary" style="font-size: 1.2rem;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="font-weight-bold mr-2">${alarm.tankNumber}</span>
+                                        ${categoryBadge}
+                                    </div>
+                                    <div class="font-weight-bold">${alarm.alarmType || 'Unknown'}</div>
+                                    <small>${alarm.message || ''}</small>
+                                    <br>
+                                    <small><i class="fas fa-clock mr-1"></i>${timeStr}</small>
+                                </div>
+                                <div>
+                                    <span class="badge badge-secondary">DIMATIKAN</span>
+                                </div>
+                            </a>
+                        `);
+                    });
+                }
+            }
+            
+            console.log('[Alarm v4] UI updated - Active:', activeCount, 'History:', historyCount);
+        }
+
+        // ✅ Helper: Get appropriate icon based on alarm category and type
+        function getAlarmIcon(category, type) {
+            if (category === 'Level') {
+                if (type === 'HH' || type === 'LL') return 'fa-exclamation-triangle';
+                if (type === 'H' || type === 'L') return 'fa-exclamation-circle';
+                return 'fa-ruler-vertical';
+            }
+            if (category === 'Temperature') {
+                return 'fa-thermometer-full';
+            }
+            if (category === 'Stagnant') {
+                return 'fa-hourglass-half';
+            }
+            if (category === 'Operation') {
+                if (type && type.includes('Receiving')) return 'fa-arrow-up';
+                if (type && type.includes('Sales')) return 'fa-arrow-down';
+                if (type && type.includes('Standby')) return 'fa-pause-circle';
+                return 'fa-cogs';
+            }
+            return 'fa-bell';
+        }
+
+        // ✅ Helper: Get category badge HTML
+        function getCategoryBadge(category, isHistory) {
+            var bgClass = isHistory ? 'badge-secondary' : '';
+            
+            switch(category) {
+                case 'Level':
+                    return `<span class="badge ${bgClass || 'badge-primary'} badge-sm"><i class="fas fa-ruler-vertical mr-1"></i>Level</span>`;
+                case 'Temperature':
+                    return `<span class="badge ${bgClass || 'badge-info'} badge-sm"><i class="fas fa-thermometer-half mr-1"></i>Temp</span>`;
+                case 'Stagnant':
+                    return `<span class="badge ${bgClass || 'badge-warning'} badge-sm"><i class="fas fa-hourglass-half mr-1"></i>Stagnant</span>`;
+                case 'Operation':
+                    return `<span class="badge ${bgClass || 'badge-danger'} badge-sm"><i class="fas fa-cogs mr-1"></i>Operation</span>`;
+                default:
+                    return `<span class="badge ${bgClass || 'badge-dark'} badge-sm">${category || 'Unknown'}</span>`;
+            }
+        }
+
+        // ✅ Play alarm audio based on alarm types
+        function playAlarmAudio() {
+            var highAudio = document.getElementById('alarmAudioHigh');
+            var lowAudio = document.getElementById('alarmAudioLow');
+            
+            if (!highAudio || !lowAudio) {
+                console.error('[Alarm v4] Audio elements not found!');
+                return;
+            }
+            
+            var needHighAudio = false;
+            var needLowAudio = false;
+            
+            currentAlarms.forEach(function(alarm) {
+                var type = alarm.alarmType;
+                var category = alarm.alarmCategory;
+                
+                console.log('[Alarm v4] Checking alarm:', type, 'Category:', category);
+                
+                // ========================================
+                // ✅ CRITICAL ALARMS -> HIGH audio (urgent)
+                // ========================================
+                // Level: HH, LL
+                // Temperature: TempH, TempL
+                // Stagnant: No Flowrate
+                // Operation: Receiving Target, Sales Low, Standby Anomaly
+                if (type === 'HH' || type === 'LL' || 
+                    type === 'TempH' || type === 'TempL' ||
+                    type === 'No Flowrate' ||
+                    type === 'Receiving Target' ||
+                    type === 'Sales Low' ||
+                    type === 'Sales Flowrate Anomaly' ||
+                    type === 'Standby Anomaly' ||
+                    type === 'Standby Flowrate Anomaly' ||
+                    type === 'Standby Level Anomaly' ||
+                    type === 'Receiving Flowrate Anomaly' ||
+                    type === 'Receiving Level Anomaly' ||
+                    type === 'Sales Level Anomaly' ||
+                    category === 'Operation' ||
+                    category === 'Stagnant') {
+                    needHighAudio = true;
+                    console.log('[Alarm v4] → HIGH audio triggered by:', type);
+                }
+                
+                // ========================================
+                // ✅ WARNING ALARMS -> LOW audio (less urgent)
+                // ========================================
+                // Level: H, L (warning, not critical)
+                if (type === 'H' || type === 'L') {
+                    needLowAudio = true;
+                    console.log('[Alarm v4] → LOW audio triggered by:', type);
+                }
+            });
+            
+            // Play HIGH audio (priority)
+            if (needHighAudio) {
+                if (highAudio.paused) {
+                    console.log('[Alarm v4] 🔊 Playing HIGH audio...');
+                    highAudio.loop = true;
+                    highAudio.play().catch(function(e) {
+                        console.warn('[Alarm v4] High audio blocked:', e.message);
+                    });
+                }
+            } else {
+                highAudio.pause();
+                highAudio.currentTime = 0;
+            }
+            
+            // Play LOW audio (only if HIGH is not playing)
+            if (needLowAudio && !needHighAudio) {
+                if (lowAudio.paused) {
+                    console.log('[Alarm v4] 🔊 Playing LOW audio...');
+                    lowAudio.loop = true;
+                    lowAudio.play().catch(function(e) {
+                        console.warn('[Alarm v4] Low audio blocked:', e.message);
+                    });
+                }
+            } else if (!needLowAudio) {
+                lowAudio.pause();
+                lowAudio.currentTime = 0;
+            }
+            
+            alarmAudioPlaying = needHighAudio || needLowAudio;
+            console.log('[Alarm v4] Audio status - High:', needHighAudio, 'Low:', needLowAudio);
+        }
+
+        // ✅ Stop all alarm audio
+        function stopAlarmAudio() {
+            var highAudio = document.getElementById('alarmAudioHigh');
+            var lowAudio = document.getElementById('alarmAudioLow');
+            
+            if (highAudio) {
+                highAudio.pause();
+                highAudio.currentTime = 0;
+            }
+            if (lowAudio) {
+                lowAudio.pause();
+                lowAudio.currentTime = 0;
+            }
+            
+            alarmAudioPlaying = false;
+            console.log('[Alarm v4] All audio stopped');
+        }
+
+        // ✅ ACK ALL ALARMS - GLOBAL (semua device/tab)
+        // Mematikan SEMUA alarm yang berbunyi di database
+        function ackAllAlarms() {
+            if (typeof jQuery === 'undefined') return;
+            var $ = jQuery;
+            
+            console.log('[Alarm v4] ACK All - Mematikan semua alarm...');
+            
+            // Immediately stop audio di device ini
+            stopAlarmAudio();
+            
+            // Send ACK ke server (akan berlaku untuk SEMUA device)
+            $.ajax({
+                url: '/Alarm/AckAllAlarms',
+                type: 'POST',
+                success: function(response) {
+                    console.log('[Alarm v4] ACK response:', response);
+                    if (response.isValid) {
+                        // Refresh alarm list
+                        checkAlarms();
+                        // Show success feedback
+                        showAckFeedback(response.message || '✓ Semua alarm dimatikan');
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[Alarm v4] ACK error:', error);
+                    alert('Error mematikan alarm');
+                }
+            });
+        }
+
+        // ✅ Show ACK feedback
+        function showAckFeedback(message) {
+            var $ = jQuery;
+            
+            // Create temporary feedback element
+            var feedback = $('<div>')
+                .addClass('alert alert-success position-fixed d-flex align-items-center')
+                .css({
+                    'top': '80px',
+                    'right': '20px',
+                    'z-index': '9999',
+                    'padding': '15px 25px',
+                    'font-size': '1.2rem',
+                    'font-weight': 'bold',
+                    'box-shadow': '0 4px 12px rgba(0,0,0,0.3)',
+                    'border-radius': '8px'
+                })
+                .html('<i class="fas fa-check-circle mr-2"></i>' + message)
+                .appendTo('body');
+            
+            // Remove after 3 seconds
+            setTimeout(function() {
+                feedback.fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+
+    </script>
+
+    <style>
+        /* ✅ Blink animation untuk alarm aktif */
+        .blink-animation {
+            animation: blink 1s ease-in-out infinite;
+        }
+        
+        @@keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        /* ✅ Styling untuk alarm dropdown */
+        #alarms-container .dropdown-item {
+            white-space: normal;
+            padding: 10px 15px;
+        }
+        
+        #alarms-container .dropdown-header {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        /* ✅ Badge small */
+        .badge-sm {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+        }
+        
+        /* ========================================
+           ✅ FIX: Sidebar full height + Logo position
+           ======================================== */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #page-top {
+            height: 100%;
+        }
+        
+        #wrapper {
+            display: flex;
+            min-height: 100vh;
+            height: 100%;
+        }
+        
+        /* Sidebar - FIXED position untuk full height */
+        .sidebar,
+        #accordionSidebar {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 14rem;
+            z-index: 100;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        /* Sidebar toggled - narrower width */
+        .sidebar.toggled {
+            width: 6.5rem !important;
+            overflow: visible !important; /* ✅ PENTING: Allow dropdown to overflow */
+        }
+        
+        /* Content wrapper - offset untuk sidebar */
+        .content-wrapper {
+            margin-left: 14rem;
+            width: calc(100% - 14rem);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease, width 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Content wrapper saat sidebar toggled */
+        .sidebar.toggled ~ .content-wrapper {
+            margin-left: 6.5rem;
+            width: calc(100% - 6.5rem);
+        }
+        
+        /* ✅ Logo Citia - posisi normal */
+        .sidebar .sidebar-card {
+            margin-top: 1rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        /* ========================================
+           ✅ FIX: TOPBAR FIXED/STICKY
+           ======================================== */
+        .topbar {
+            position: fixed !important;
+            top: 0;
+            right: 0;
+            left: 14rem;
+            z-index: 99;
+            height: 4.375rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+        }
+        
+        .sidebar.toggled ~ .content-wrapper .topbar {
+            left: 6.5rem;
+        }
+        
+        .content-wrapper > *:not(.topbar) {
+            margin-top: 4.375rem;
+        }
+        
+        .container-fluid:first-of-type,
+        #tank-container {
+            padding-top: 1rem;
+        }
+        
+        /* ========================================
+           ✅ FIX: SIDEBAR TOGGLED - DROPDOWN POPUP
+           Submenu muncul sebagai popup saat sidebar collapsed
+           ======================================== */
+    
+        /* Nav item harus relative untuk positioning popup */
+        .sidebar.toggled .nav-item {
+            position: relative;
+        }
+    
+        /* Collapse menu saat toggled - tampil sebagai popup */
+        .sidebar.toggled .nav-item .collapse {
+            position: absolute;
+            left: 100% !important; /* Muncul di sebelah kanan sidebar */
+            top: 0;
+            z-index: 1000;
+            min-width: 15rem;
+            max-width: 18rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3);
+            border-radius: 0.35rem;
+            background-color: #fff;
+        }
+    
+        /* Tampilkan collapse saat hover pada parent nav-item */
+        .sidebar.toggled .nav-item:hover > .collapse {
+            display: block !important;
+        }
+    
+        /* Styling untuk collapse-inner di dalam popup */
+        .sidebar.toggled .nav-item .collapse .collapse-inner {
+            padding: 0.5rem 0;
+            margin: 0;
+            border-radius: 0.35rem;
+        }
+    
+        /* Collapse item styling */
+        .sidebar.toggled .nav-item .collapse .collapse-item {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            display: block;
+            color: #3a3b45;
+        }
+    
+        .sidebar.toggled .nav-item .collapse .collapse-item:hover {
+            background-color: #eaecf4;
+        }
+    
+        /* Collapse header */
+        .sidebar.toggled .nav-item .collapse .collapse-header {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            color: #858796;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+    
+        /* Arrow indicator - hide saat toggled */
+        .sidebar.toggled .nav-link[data-toggle="collapse"]::after {
+            display: none;
+        }
+    
+        /* ✅ Override: Jangan pakai data-toggle collapse behavior saat toggled */
+        .sidebar.toggled .collapse:not(.show) {
+            display: none;
+        }
+    
+        .sidebar.toggled .nav-item:hover .collapse:not(.show) {
+            display: block !important;
+        }
+    </style>
+
+</head>
+<!-- Page Wrapper -->
+<body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-info sidebar sidebar-dark accordion" id="accordionSidebar">
+
+            <!-- Sidebar - Brand -->
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" asp-area="" asp-controller="Home" asp-action="Index">
+                <div class="sidebar-brand-icon">
+                    <img src="~/assets/img/pertamina_logo.png" alt="Pertamina" width="60" height="40" class="mx-2">
+                </div>
+                <div class="sidebar-brand-text mx-2 text-white" style="font-size: 1.2rem;">Pertamina</div>
+            </a>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider my-0">
+
+            <!-- Nav Item - Dashboard -->
+            <li class="nav-item active">
+                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span style="font-size:1em">Dashboard</span>
+                </a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Interface
+            </div>
+
+            <!-- Nav Item - Tank Collapse Menu -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+                    <i class="fas fa-prescription-bottle"></i>
+                    <span style="font-size:1em">Tank</span>
+                </a>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Tank Components:</h6>
+                        <a class="collapse-item" asp-area="" asp-controller="TankLiveDatas" asp-action="Index" style="font-size:1em">
+                            <i class="fas fa-eye"></i>
+                            Tank Monitoring
+                        </a>
+                        <a class="collapse-item" asp-area="" asp-controller="TankTicket" asp-action="Index" style="font-size:1em">
+                            <i class="fas fa-ticket-alt"></i>
+                            Tank Ticket
+                        </a>
+                        <a class="collapse-item" asp-area="" asp-controller="TankHistorical" asp-action="Index" style="font-size:1em">
+                            <i class="fas fa-history"></i>
+                            Tank Historical
+                        </a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Addons
+            </div>
+
+            <!-- Nav Item - Administration Collapse Menu -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="true" aria-controls="collapsePages">
+                    <i class="fas fa-users-cog"></i>
+                    <span asp-action="Index" style="font-size:1em">Administration</span>
+                </a>
+                <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Production:</h6>
+                        <a class="collapse-item" asp-area="" asp-controller="Products" asp-action="Index" style="font-size:1em">
+                            <i class="fas fa-tint"></i>
+                            Fuel Oil
+                        </a>
+                        <a class="collapse-item" asp-area="" asp-controller="Tanks" asp-action="Index" style="font-size:1em">
+                            <i class="fas fa-prescription-bottle"></i>
+                            Tank Configuration
+                        </a>
+                        <h6 class="collapse-header">Configuration:</h6>
+                        <a class="collapse-item" asp-area="" asp-controller="AppUsers" asp-action="Index" style="font-size:1em">
+                            <i class="fas fa-users"></i>
+                            User List
+                        </a>
+                        <a class="collapse-item" asp-area="" asp-controller="AppRoles" asp-action="Index" style="font-size:1em">
+                            <i class="fas fa-user-tag"></i>
+                            User Role
+                        </a>
+                        <a class="collapse-item" asp-area="" asp-controller="WebServiceConfigurations" asp-action="Index" style="font-size:1em">
+                            <i class="fas fa-cogs"></i>
+                            Web Service
+                        </a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider d-none d-md-block">
+
+            <!-- Sidebar Toggler (Sidebar) -->
+            <div class="text-center d-none d-md-inline">
+                <button class="rounded-circle border-0" id="sidebarToggle"></button>
+            </div>
+
+            <!-- Sidebar Logo Citia -->
+            <div class="sidebar-card d-none d-lg-flex bg-transparent">
+                <a href="https://citia-engineering.com/">
+                    <img src="~/assets/img/citia_logo_putih.png" alt="Citia Engineering" width="90" height="90" class="py-1" />
+                </a>
+            </div>
+        </ul>
+        <!-- End Sidebar -->
+
+        <div class="content-wrapper" style="width: 100%;">
+            <!-- Topbar -->
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+
+                <!-- Sidebar Toggle (Topbar) -->
+                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                    <i class="fa fa-bars"></i>
+                </button>
+
+                <!-- Topbar Title -->
+                <p class="navbar-item" style="
+                    font-size: clamp(1rem, 1.5vw, 1.4rem);
+                    font-weight: 800;
+                    color: #000;
+                    line-height: 1.3;
+                    margin: auto 0;
+                    padding: 0.5rem 0;
+                ">
+                    Tank Management System - Fuel Terminal Cikampek
+                </p>
+
+                <!-- Audio Elements -->
+                <audio id="alarmAudioLow" src="~/audio/alarm-low.mp3"></audio>
+                <audio id="alarmAudioHigh" src="~/audio/alarm-high.mp3"></audio>
+
+                <!-- Topbar Navbar -->
+                <ul class="navbar-nav ml-auto">
+
+                    <!-- Nav Item - Alerts -->
+                    <li class="nav-item dropdown no-arrow mx-1 d-flex align-items-center">
+                        
+                        <!-- ✅ ACK BUTTON - Mematikan SEMUA alarm (GLOBAL) -->
+                        <button class="btn btn-danger mr-3" 
+                                type="button" 
+                                onclick="ackAllAlarms()"
+                                title="Matikan semua alarm yang berbunyi"
+                                style="width:130px; font-weight:800; font-size:1.2rem; padding: 8px 16px;">
+                            <i class="fas fa-volume-mute mr-1"></i> ACK
+                        </button>
+
+                        <!-- ✅ BELL ICON - Alarm Log (aktif + history) -->
+                        <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" 
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" 
+                           style="font-size:2.25rem;" title="Lihat riwayat alarm">
+                            <i class="fas fa-bell fa-fw"></i>
+                            <!-- Counter Badge (hanya alarm AKTIF) -->
+                            <span id="count-alarm" class="badge badge-danger badge-counter" style="display: none;"></span>
+                        </a>
+                        
+                        <!-- Dropdown - Alarm Log -->
+                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                             aria-labelledby="alertsDropdown" 
+                             style="min-width: 450px; max-height: 500px; overflow-y: auto;">
+                            <h5 class="dropdown-header bg-info text-white">
+                                <i class="fas fa-list-alt mr-2"></i>
+                                Log Alarm
+                            </h5>
+                            <div id="alarms-container" style="font-size: 0.95rem;">
+                                <!-- Alarm items will be inserted here by JavaScript -->
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div>
+                                        <span class="font-weight-bold text-muted">
+                                            <i class="fas fa-spinner fa-spin mr-2"></i>Memuat...
+                                        </span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+
+                    <!-- Nav Item - User Information -->
+                    <li class="nav-item dropdown no-arrow">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="mr-2 d-none d-lg-inline text-gray-600 small">@UserManager.GetUserName(User)</span>
+                            <img class="img-profile rounded-circle" src="~/assets/img/undraw_profile.svg">
+                        </a>
+                        <!-- Dropdown - User Information -->
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                             aria-labelledby="userDropdown">
+                            <a class="dropdown-item" href="user/profile.html">
+                                <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Profile
+                            </a>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Activity Log
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <form id="form_logout" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                                <a class="dropdown-item" href="javascript:{}" onclick="document.getElementById('form_logout').submit();">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Logout
+                                </a>
+                            </form>
+                        </div>
+                    </li>
+
+                </ul>
+
+            </nav>
+            <!-- End of Topbar -->
+            @RenderBody()
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="form-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" style="font-size: 1.25rem; color: black;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Edit Data</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                </div>
+                <div class="modal-footer">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="custom-modal" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true" style="margin-top: -20px;">
+        <div class="modal-dialog">
+            <div class="modal-content" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color:black; font-size: 2rem; font-weight: 600;">Alert</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" style="font-size: 1.5rem; font-weight: 600">
+                    <p>Modal body text goes here.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="bt-alert" onclick="CloseModal()" data-dismiss="modal" aria-label="Close" class="btn btn-primary" style="width:40%;">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <partial name="_Scripts" />
+
+    <script>
+        function CloseModal() {
+            $('#custom-modal').modal('hide');
+        }
+        
+        // ========================================
+        // ✅ SIDEBAR STATE PERSISTENCE
+        // Simpan posisi sidebar (open/hide) di localStorage
+        // ========================================
+        jQuery(document).ready(function($) {
+            
+            // ✅ 1. Load saved sidebar state saat halaman load
+            var savedSidebarState = localStorage.getItem('sidebarToggled');
+            var sidebar = $('#accordionSidebar');
+            var body = $('body');
+            
+            if (savedSidebarState === 'true') {
+                // Sidebar was toggled (collapsed) - apply immediately without animation
+                sidebar.addClass('toggled');
+                body.addClass('sidebar-toggled');
+            } else if (savedSidebarState === 'false') {
+                // Sidebar was open - ensure it's open
+                sidebar.removeClass('toggled');
+                body.removeClass('sidebar-toggled');
+            }
+            // If null (first visit), use default state (open)
+            
+            // ✅ 2. Save sidebar state when toggle button clicked
+            $('#sidebarToggle, #sidebarToggleTop').on('click', function() {
+                // Wait for toggle animation to complete
+                setTimeout(function() {
+                    var isToggled = sidebar.hasClass('toggled');
+                    localStorage.setItem('sidebarToggled', isToggled);
+                    console.log('[Sidebar] State saved:', isToggled ? 'collapsed' : 'expanded');
+                }, 100);
+            });
+            
+            // ✅ 3. Handle sidebar submenu hover saat toggled
+            handleSidebarSubmenu();
+            
+            $('#sidebarToggle, #sidebarToggleTop').on('click', function() {
+                setTimeout(handleSidebarSubmenu, 300);
+            });
+            
+            // MutationObserver untuk detect class changes
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'class') {
+                        handleSidebarSubmenu();
+                    }
+                });
+            });
+            
+            var sidebarElement = document.getElementById('accordionSidebar');
+            if (sidebarElement) {
+                observer.observe(sidebarElement, { attributes: true });
+            }
+        });
+        
+        // ✅ FIX: Sidebar toggled - submenu hover behavior
+        function handleSidebarSubmenu() {
+            var $ = jQuery;
+            var sidebar = $('#accordionSidebar');
+            
+            if (sidebar.hasClass('toggled')) {
+                // Sidebar collapsed - use hover untuk show submenu
+                $('.sidebar .nav-item').off('mouseenter.submenu mouseleave.submenu');
+                
+                $('.sidebar .nav-item').on('mouseenter.submenu', function() {
+                    if (sidebar.hasClass('toggled')) {
+                        $(this).find('.collapse').addClass('show');
+                    }
+                });
+                
+                $('.sidebar .nav-item').on('mouseleave.submenu', function() {
+                    if (sidebar.hasClass('toggled')) {
+                        $(this).find('.collapse').removeClass('show');
+                    }
+                });
+            } else {
+                // Sidebar expanded - remove hover handlers, use click (default Bootstrap behavior)
+                $('.sidebar .nav-item').off('mouseenter.submenu mouseleave.submenu');
+            }
+        }
+    </script>
+
+    @if (IsSectionDefined("AddToHead"))
+    {
+        @RenderSection("AddToHead", required: false)
+    }
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,84 @@
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="container-fluid mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-lock fa-5x text-danger"></i>
+                    </div>
+
+                    <h2 class="text-danger mb-3">Access Denied</h2>
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            @TempData["ErrorMessage"]
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            You do not have permission to access this resource.
+                            <br /><br />
+                            <strong>Only the following roles can perform Create/Update/Delete operations:</strong>
+                            <ul class="list-unstyled mt-2">
+                                <li><i class="fas fa-user-shield mr-2"></i>Administrator</li>
+                                <li><i class="fas fa-user-shield mr-2"></i>Developer</li>
+                                <li><i class="fas fa-user-shield mr-2"></i>Shift Supervisor</li>
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="mt-4">
+                        <p class="text-muted">
+                            <strong>Current User:</strong> @User.Identity.Name
+                        </p>
+                        <p class="text-muted">
+                            <strong>Your Roles:</strong>
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                var roles = User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+                                if (roles.Any())
+                                {
+                                    <span class="badge badge-secondary ml-2">@string.Join(", ", roles)</span>
+                                }
+                                else
+                                {
+                                    <span class="text-warning">No roles assigned</span>
+                                }
+                            }
+                        </p>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+                            <i class="fas fa-home mr-2"></i>Go to Home
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-secondary ml-2">
+                            <i class="fas fa-arrow-left mr-2"></i>Go Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-3 text-muted">
+                <small>
+                    <i class="fas fa-info-circle mr-1"></i>
+                    If you believe you should have access, please contact your system administrator.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        console.log('[AccessDenied] Roles:', '@string.Join(", ", User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value))');
+    </script>
+}

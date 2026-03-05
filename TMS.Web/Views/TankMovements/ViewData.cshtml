@@ -1,0 +1,53 @@
+﻿@model List<TMS.Models.Tank>
+
+@{
+    ViewData["Title"] = "View";
+    Layout = null;
+}
+
+@*<form>
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Name" class="control-label"></label>
+            <input type="text" asp-for="Name" class="form-control" disabled />
+        </div>
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="tankMovement.Status" class="control-label"></label>
+            @if (Model.tankMovement.Status)
+            {
+                <input type="text" value="OPEN" class="form-control" disabled />
+            }
+            else
+            {
+                <input type="text" value="CLOSE" class="form-control" disabled />
+            }
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="HeightSafeCapacity" class="control-label"></label>
+            <input type="text" asp-for="HeightSafeCapacity" class="form-control" disabled />
+        </div>
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="tankLiveData.FlowRateKLperH" class="control-label"></label>
+            <input type="text" asp-for="tankLiveData.FlowRateKLperH" class="form-control" disabled />
+        </div>
+    </div>
+     <hr> 
+    <div class="form-group">
+        <div class="form-group row">
+             <div class="col-sm-10 mb-3 mb-sm-0">
+                    <label asp-for="tankMovement.EstimationTimeStamp" class="control-label"></label>
+                 </div>
+             <div class="col-sm-2 mb-3 mb-sm-0">
+                 @if ((bool)Model.tankMovement.Alarm)
+                 {
+                     <i id="iconAlarm" class='fas fa-bell' style="font-size: 25px;"></i>
+                 }
+
+             </div>
+            </div>
+        <input type="text" style="font-size: 50px;" class="form-control" value="@Model.tankMovement.EstimationTimeStamp.Value.ToString(@"hh\:mm\:ss")"disabled />
+    </div>
+</form>*@
+

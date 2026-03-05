@@ -1,0 +1,47 @@
+﻿@model TMS.Models.TankMovement
+
+
+<!-- Tank Table -->
+<div class="table-responsive">
+    <table id="tb-tankmovement" class="table table-striped table-bordered dt-responsive nowrap" cellspacing="0">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.TankId)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Alarm)
+                </th>
+                <th>MOVEMENT</th>
+                <th>
+                    @Html.DisplayNameFor(model => model.tank.Tank_Name)
+                </th>
+                <th>
+                    PRODUCT
+                </th>
+                <th>
+                    STATUS
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.AlarmTimeStamp)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.tank.Height_Safe_Capacity)
+                </th>
+                <th>
+                    LIQUID LEVEL
+                </th>
+                <th>
+                    DEL LEVEL
+                </th>
+                <th>
+                    FLOW RATE (KL/H)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.EstimationTimeStamp)
+
+                </th>
+            </tr>
+        </thead>
+    </table>
+</div>

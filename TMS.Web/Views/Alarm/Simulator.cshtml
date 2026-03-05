@@ -1,0 +1,519 @@
+@{
+    ViewData["Title"] = "Alarm Simulator";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+}
+
+<div class="container-fluid mt-5">
+    <div class="card shadow-lg">
+        <div class="card-header bg-gradient-danger text-white">
+            <h4 class="mb-0">?? Live Alarm Simulator - Testing Only</h4>
+        </div>
+        <div class="card-body">
+            <!-- Tank Selection -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="font-weight-bold">Pilih Tank</label>
+                    <select id="tankSelect" class="form-control form-control-lg">
+                        <option value="">-- Select Tank --</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold">Konfigurasi Alarm</label>
+                    <div id="alarmConfig" class="alert alert-info p-3">
+                        <small>Loading...</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Slider Section -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card bg-light">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">? LIVE LEVEL SIMULATOR (Real-time Alarm Trigger)</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Threshold Visual Display -->
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <div class="progress" style="height: 60px; position: relative;">
+                                        <div id="progressLL" class="progress-bar bg-danger" style="width: 0%; display: none;" title="LL Zone">
+                                            <span class="position-absolute" style="width: 100%; text-align: center; color: white; font-weight: bold; padding-top: 20px;">LL</span>
+                                        </div>
+                                        <div id="progressL" class="progress-bar bg-warning" style="width: 0%; display: none;" title="L Zone">
+                                            <span class="position-absolute" style="width: 100%; text-align: center; color: black; font-weight: bold; padding-top: 20px;">L</span>
+                                        </div>
+                                        <div id="progressNormal" class="progress-bar bg-success" style="width: 0%; display: none;" title="Normal Zone">
+                                            <span class="position-absolute" style="width: 100%; text-align: center; color: white; font-weight: bold; padding-top: 20px;">NORMAL</span>
+                                        </div>
+                                        <div id="progressH" class="progress-bar bg-warning" style="width: 0%; display: none;" title="H Zone">
+                                            <span class="position-absolute" style="width: 100%; text-align: center; color: black; font-weight: bold; padding-top: 20px;">H</span>
+                                        </div>
+                                        <div id="progressHH" class="progress-bar bg-danger" style="width: 0%; display: none;" title="HH Zone">
+                                            <span class="position-absolute" style="width: 100%; text-align: center; color: white; font-weight: bold; padding-top: 20px;">HH</span>
+                                        </div>
+                                        <!-- Current Level Indicator -->
+                                        <div id="levelIndicator" class="position-absolute" style="width: 4px; height: 100%; background-color: black; top: 0; left: 0%; transition: left 0.1s linear;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Slider -->
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="font-weight-bold d-block mb-2">
+                                        Level Tangki: <span id="currentLevelDisplay" class="badge badge-primary">0 mm</span>
+                                    </label>
+                                    <input type="range" id="liveSlider" class="form-control-range w-100" 
+                                           min="0" max="15000" value="0" step="50" style="height: 50px; cursor: pointer;">
+                                </div>
+                            </div>
+
+                            <!-- Manual Input + Status -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="font-weight-bold">Manual Level (mm)</label>
+                                    <div class="input-group">
+                                        <input type="number" id="levelInput" class="form-control form-control-lg" 
+                                               value="0" min="0" max="15000" step="50">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-info" type="button" onclick="syncSliderFromInput()">?</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="font-weight-bold">Status Alarm</label>
+                                    <div id="alarmStatusDisplay" class="alert alert-success p-3 mb-0">
+                                        <strong>? NORMAL</strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="font-weight-bold">Mode</label>
+                                    <div class="custom-control custom-switch mt-2">
+                                        <input type="checkbox" class="custom-control-input" id="autoSimulateToggle" checked>
+                                        <label class="custom-control-label" for="autoSimulateToggle">
+                                            <span id="autoSimulateLabel">?? AUTO-UPDATE ON</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <label class="font-weight-bold d-block mb-3">? Quick Scenarios</label>
+                    <div class="btn-group-vertical w-100" role="group">
+                        <button type="button" class="btn btn-danger btn-lg text-left" onclick="quickSetLevel('LL')">
+                            <i class="fas fa-arrow-down"></i> <strong>Trigger LL</strong> (Critical Low)
+                        </button>
+                        <button type="button" class="btn btn-warning btn-lg text-left" onclick="quickSetLevel('L')">
+                            <i class="fas fa-arrow-down"></i> <strong>Trigger L</strong> (Warning Low)
+                        </button>
+                        <button type="button" class="btn btn-success btn-lg text-left" onclick="quickSetLevel('NORMAL')">
+                            <i class="fas fa-check-circle"></i> <strong>Normal Level</strong> (Safe Zone)
+                        </button>
+                        <button type="button" class="btn btn-warning btn-lg text-left" onclick="quickSetLevel('H')">
+                            <i class="fas fa-arrow-up"></i> <strong>Trigger H</strong> (Warning High)
+                        </button>
+                        <button type="button" class="btn btn-danger btn-lg text-left" onclick="quickSetLevel('HH')">
+                            <i class="fas fa-arrow-up"></i> <strong>Trigger HH</strong> (Critical High)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACK & Reset Buttons -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-warning btn-lg btn-block" onclick="acknowledgeAlarm()">
+                        <i class="fas fa-check-circle"></i> ACK ALARM
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-secondary btn-lg btn-block" onclick="resetAlarm()">
+                        <i class="fas fa-redo-alt"></i> RESET
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-info btn-lg btn-block" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt"></i> REFRESH DASHBOARD
+                    </button>
+                </div>
+            </div>
+
+            <!-- Response Log -->
+            <div class="row">
+                <div class="col-md-12">
+                    <label class="font-weight-bold">?? Event Log</label>
+                    <div id="logBox" class="alert alert-secondary p-4" style="min-height: 200px; max-height: 400px; overflow-y: auto; background-color: #f8f9fa; border: 2px solid #dee2e6;">
+                        <pre id="logText" style="margin: 0; font-size: 12px; color: #333;">Ready for testing...\n</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="alert alert-info mt-4">
+                <h5>?? Cara Menggunakan Live Simulator:</h5>
+                <ul>
+                    <li><strong>1. Pilih Tank</strong> - Lihat konfigurasi alarm threshold di panel atas</li>
+                    <li><strong>2. Geser Slider</strong> - Level akan berubah secara real-time</li>
+                    <li><strong>3. Lihat Status Alarm</strong> - Warna dan text berubah sesuai threshold yang tersentuh</li>
+                    <li><strong>4. Cek Dashboard</strong> - Buka dashboard di tab lain untuk lihat alarm berbunyi</li>
+                    <li><strong>5. ACK Alarm</strong> - Tekan tombol ACK untuk mematikan alarm sound</li>
+                    <li><strong>? MODE AUTO-UPDATE</strong> - Ketika ON (default), setiap slider bergerak = update DB + trigger alarm</li>
+                    <li><strong>?? Threshold Visual</strong> - Lihat zone warna di progress bar untuk memahami range level</li>
+                </ul>
+                <hr>
+                <p><strong>?? Tips:</strong> Buka DevTools (F12) ? Console untuk lihat detailed logging dari setiap action</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+        var tankConfigs = {};
+        var currentTank = null;
+        var isAutoUpdate = true;
+        var pendingUpdate = false;
+
+        // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+        jQuery(document).ready(function($) {
+            loadTankConfigs();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Tank selection
+            $('#tankSelect').change(function() {
+                currentTank = $(this).val();
+                updateAlarmConfig();
+                resetAllSliders();
+                log('?? Tank selected: ' + currentTank);
+            });
+
+            // Live Slider - Update saat di-drag
+            $('#liveSlider').on('input', function() {
+                var level = parseInt($(this).val());
+                $('#levelInput').val(level);
+                $('#currentLevelDisplay').text(level + ' mm');
+                updateVisualProgress();
+                updateAlarmStatusDisplay();
+                
+                // Auto-trigger alarm jika mode AUTO-UPDATE ON
+                if (isAutoUpdate && currentTank) {
+                    triggerAlarmLive(level);
+                }
+            });
+
+            // Manual Input
+            $('#levelInput').on('change', function() {
+                var val = Math.min(15000, Math.max(0, parseInt($(this).val()) || 0));
+                $(this).val(val);
+                $('#liveSlider').val(val);
+                $('#currentLevelDisplay').text(val + ' mm');
+                updateVisualProgress();
+                updateAlarmStatusDisplay();
+                
+                if (isAutoUpdate && currentTank) {
+                    triggerAlarmLive(val);
+                }
+            });
+
+            // Auto-Update Toggle
+            $('#autoSimulateToggle').change(function() {
+                isAutoUpdate = $(this).is(':checked');
+                var label = isAutoUpdate ? '?? AUTO-UPDATE ON' : '? AUTO-UPDATE OFF';
+                $('#autoSimulateLabel').text(label);
+                log(isAutoUpdate ? '? Auto-update ENABLED' : '? Auto-update DISABLED');
+            });
+        }
+
+        // Live Alarm Trigger (dipanggil setiap slider change)
+        function triggerAlarmLive(level) {
+            if (!currentTank) return;
+
+            // Debounce: cegah too many requests
+            if (pendingUpdate) return;
+            pendingUpdate = true;
+
+            $.ajax({
+                url: '@Url.Action("SimulateAlarm", "Alarm")',
+                type: 'POST',
+                data: {
+                    tankNumber: currentTank,
+                    levelValue: level
+                },
+                success: function(response) {
+                    if (response.isValid) {
+                        var alarmInfo = response.alarmCondition ? 
+                            '?? ' + response.alarmCondition + ' (Status: ' + response.alarmStatus + ')' : 
+                            '? NORMAL';
+                        log('[LIVE] Level ' + level + 'mm ? ' + alarmInfo);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('[LIVE ERROR]', xhr);
+                },
+                complete: function() {
+                    pendingUpdate = false;
+                }
+            });
+        }
+
+        function loadTankConfigs() {
+            $.ajax({
+                url: '@Url.Action("GetTankAlarmConfig", "Alarm")',
+                type: 'GET',
+                success: function(response) {
+                    if (response.isValid && response.data) {
+                        response.data.forEach(function(tank) {
+                            tankConfigs[tank.tankName] = tank;
+                            $('#tankSelect').append(
+                                $('<option>').val(tank.tankName).text(tank.tankName)
+                            );
+                        });
+                        log('? Loaded ' + response.data.length + ' tank configurations');
+                    }
+                },
+                error: function(xhr) {
+                    log('? Error loading configs');
+                }
+            });
+        }
+
+        function updateAlarmConfig() {
+            if (!currentTank || !tankConfigs[currentTank]) {
+                $('#alarmConfig').html('No tank selected');
+                return;
+            }
+
+            var config = tankConfigs[currentTank];
+            var html = '<small><strong>?? Threshold Config:</strong><br>';
+            
+            html += (config.useAlarmLL ? '? ' : '? ') + '<strong>LL:</strong> ' + (config.levelLL || 'N/A') + 'mm<br>';
+            html += (config.useAlarmL ? '? ' : '? ') + '<strong>L:</strong> ' + (config.levelL || 'N/A') + 'mm<br>';
+            html += (config.useAlarmH ? '? ' : '? ') + '<strong>H:</strong> ' + (config.levelH || 'N/A') + 'mm<br>';
+            html += (config.useAlarmHH ? '? ' : '? ') + '<strong>HH:</strong> ' + (config.levelHH || 'N/A') + 'mm</small>';
+            
+            $('#alarmConfig').html(html);
+            
+            // Update slider max sesuai tank config
+            var maxLevel = (config.levelHH || 15000) + 500;
+            $('#liveSlider').attr('max', maxLevel);
+            $('#levelInput').attr('max', maxLevel);
+        }
+
+        function updateVisualProgress() {
+            if (!currentTank || !tankConfigs[currentTank]) return;
+
+            var config = tankConfigs[currentTank];
+            var level = parseInt($('#levelInput').val()) || 0;
+            var maxLevel = parseInt($('#liveSlider').attr('max')) || 15000;
+
+            // Calculate percentages
+            var llPct = (config.levelLL || 0) / maxLevel * 100;
+            var lPct = ((config.levelL || 0) - (config.levelLL || 0)) / maxLevel * 100;
+            var hPct = ((config.levelH || 0) - (config.levelL || 0)) / maxLevel * 100;
+            var hhPct = ((config.levelHH || 0) - (config.levelH || 0)) / maxLevel * 100;
+            var normalPct = 100 - llPct - lPct - hPct - hhPct;
+
+            // Show/hide zones
+            if (config.useAlarmLL && llPct > 0) {
+                $('#progressLL').css('width', llPct + '%').show();
+            } else {
+                $('#progressLL').hide();
+            }
+
+            if (config.useAlarmL && lPct > 0) {
+                $('#progressL').css('width', lPct + '%').show();
+            } else {
+                $('#progressL').hide();
+            }
+
+            if (config.useAlarmH && hPct > 0) {
+                $('#progressH').css('width', hPct + '%').show();
+            } else {
+                $('#progressH').hide();
+            }
+
+            if (config.useAlarmHH && hhPct > 0) {
+                $('#progressHH').css('width', hhPct + '%').show();
+            } else {
+                $('#progressHH').hide();
+            }
+
+            if (normalPct > 0) {
+                $('#progressNormal').css('width', normalPct + '%').show();
+            } else {
+                $('#progressNormal').hide();
+            }
+
+            // Update current level indicator
+            var levelPct = (level / maxLevel) * 100;
+            $('#levelIndicator').css('left', levelPct + '%');
+        }
+
+        function updateAlarmStatusDisplay() {
+            if (!currentTank || !tankConfigs[currentTank]) {
+                $('#alarmStatusDisplay').html('<span class="badge badge-info">No tank selected</span>')
+                    .removeClass('alert-success alert-warning alert-danger').addClass('alert-info');
+                return;
+            }
+
+            var level = parseInt($('#levelInput').val()) || 0;
+            var config = tankConfigs[currentTank];
+            var statusColor = 'alert-success';
+            var statusText = '? NORMAL';
+            var statusEmoji = '?';
+
+            if (config.useAlarmHH && level >= (config.levelHH || 0)) {
+                statusColor = 'alert-danger';
+                statusText = '?? HH ALARM (Critical High)';
+                statusEmoji = '??';
+            } else if (config.useAlarmH && level >= (config.levelH || 0) && level < (config.levelHH || 0)) {
+                statusColor = 'alert-warning';
+                statusText = '?? H ALARM (High)';
+                statusEmoji = '??';
+            } else if (config.useAlarmLL && level <= (config.levelLL || 0)) {
+                statusColor = 'alert-danger';
+                statusText = '?? LL ALARM (Critical Low)';
+                statusEmoji = '??';
+            } else if (config.useAlarmL && level <= (config.levelL || 0) && level > (config.levelLL || 0)) {
+                statusColor = 'alert-warning';
+                statusText = '?? L ALARM (Low)';
+                statusEmoji = '??';
+            }
+
+            $('#alarmStatusDisplay')
+                .html('<strong>' + statusEmoji + ' ' + statusText + '</strong>')
+                .removeClass('alert-success alert-warning alert-danger alert-info')
+                .addClass(statusColor);
+        }
+
+        function quickSetLevel(scenario) {
+            if (!currentTank || !tankConfigs[currentTank]) {
+                alert('Pilih tank terlebih dahulu!');
+                return;
+            }
+
+            var config = tankConfigs[currentTank];
+            var level = 0;
+
+            switch(scenario) {
+                case 'LL':
+                    level = (config.levelLL || 100) - 50;
+                    log('?? Quick Set: LL Zone');
+                    break;
+                case 'L':
+                    level = (config.levelL || 500) - 50;
+                    log('?? Quick Set: L Zone');
+                    break;
+                case 'H':
+                    level = (config.levelH || 3500) + 50;
+                    log('?? Quick Set: H Zone');
+                    break;
+                case 'HH':
+                    level = (config.levelHH || 4500) + 50;
+                    log('?? Quick Set: HH Zone');
+                    break;
+                case 'NORMAL':
+                    level = ((config.levelL || 500) + (config.levelH || 3500)) / 2;
+                    log('? Quick Set: Normal Zone');
+                    break;
+            }
+
+            level = Math.max(0, Math.min(parseInt($('#liveSlider').attr('max')), level));
+            $('#liveSlider').val(level).trigger('input');
+        }
+
+        function syncSliderFromInput() {
+            var val = Math.min(15000, Math.max(0, parseInt($('#levelInput').val()) || 0));
+            $('#levelInput').val(val);
+            $('#liveSlider').val(val).trigger('input');
+            log('? Synced slider & input');
+        }
+
+        function acknowledgeAlarm() {
+            if (!currentTank) {
+                alert('Pilih tank terlebih dahulu!');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("AckAlarm", "Alarm")',
+                type: 'GET',
+                data: { tankName: currentTank },
+                success: function(response) {
+                    if (response.isValid) {
+                        log('? ' + response.message);
+                    } else {
+                        log('? ' + response.message);
+                    }
+                },
+                error: function(xhr) {
+                    log('? ACK Error');
+                }
+            });
+        }
+
+        function resetAlarm() {
+            if (!currentTank) {
+                alert('Pilih tank terlebih dahulu!');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("ResetAlarm", "Alarm")',
+                type: 'POST',
+                data: { tankNumber: currentTank },
+                success: function(response) {
+                    if (response.isValid) {
+                        resetAllSliders();
+                        log('? Reset complete');
+                    } else {
+                        log('? ' + response.message);
+                    }
+                },
+                error: function(xhr) {
+                    log('? Reset Error');
+                }
+            });
+        }
+
+        function refreshDashboard() {
+            log('?? Reloading dashboard (buka di tab lain untuk lihat update)...');
+            // Hint untuk user
+            alert('Silakan buka dashboard di tab lain untuk refresh data live. Tekan F5 atau refresh button di dashboard.');
+        }
+
+        function resetAllSliders() {
+            $('#liveSlider').val(0);
+            $('#levelInput').val(0);
+            $('#currentLevelDisplay').text('0 mm');
+            updateVisualProgress();
+            updateAlarmStatusDisplay();
+        }
+
+        function log(message) {
+            var timestamp = new Date().toLocaleTimeString('id-ID');
+            var currentText = $('#logText').text();
+            var newText = '[' + timestamp + '] ' + message + '\n' + currentText;
+            $('#logText').text(newText);
+        }
+    </script>
+    // Di bagian response logging, tambahkan ini untuk menampilkan debug info:
+
+    success: function(response) {
+        if (response.isValid) {
+            var debugMsg = response.debug ? '\n\n[DEBUG LOG]\n' + response.debug : '';
+            logResponse('? ' + response.message + debugMsg + '\n\nAlarm: ' + (response.alarmCondition || 'NORMAL'));
+        } else {
+            logResponse('? ' + response.message);
+        }
+    },
+}

@@ -1,0 +1,45 @@
+﻿@model TMS.Models.TankTicket
+<!-- Tank Table -->
+<div class="table-responsive">
+    <table id="tb-pi" class="table table-striped table-bordered dt-responsive nowrap" width="100%" cellspacing="0" style="font-size:1.5rem; color:black;font-weight:600;">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.Id)
+                </th>
+                <th>Action</th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Tank_Id)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Ticket_Number)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Timestamp)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Operation_Type)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Operation_Status)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Measurement_Method)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.LiquidLevel)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.WaterLevel)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.LiquidTemperature)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.LiquidDensity)
+                </th>
+            </tr>
+        </thead>
+    </table>
+</div>
+<!-- End Tank table -->

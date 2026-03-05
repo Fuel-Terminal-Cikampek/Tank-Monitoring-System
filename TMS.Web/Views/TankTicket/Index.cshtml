@@ -1,0 +1,2165 @@
+@model TMS.Models.TankTicket
+@using TMS.Web.Authorization
+
+@{
+    ViewData["Title"] = "Tank Ticket";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+}
+@*Tank Ticket*@
+<head>
+    @section Scripts{
+        <script type="text/javascript" asp-append-version="true">
+            // ? Check if current user can modify data (admin only)
+            var canModifyData = @Json.Serialize(User.CanModifyData());
+
+            var oTable;
+            var tableData = [];
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                oTable = $('#tb-tankticket').DataTable({
+                    "serverSide": true,
+                    "scrollY": true,
+                    "scrollX": true,
+                    "autoWidth": false,
+                    "scrollCollapse": true,
+                    "paging": true,
+                    "fixedColumns": true,
+                    "processing": true,
+                    "pageLength": 50,
+                    "ajax": {
+                        "url": "@Url.Action("LoadData")",
+                        "type": "POST",
+                        "datatype": "json",
+                        "data": function (d) {
+                            d.TankNameFilter = document.getElementById("tank-name").value;
+                            d.OperationType = document.getElementById("operation-type").value;
+                            d.OperationStatus = document.getElementById("operation-status").value;
+                            d.TicketNumber = document.getElementById("ticket-number").value;
+
+                            // ? FIX: Gunakan format yang SAMA dengan value input (dd MMMM yyyy)
+                            var minVal = document.getElementById("min").value;
+                            var maxVal = document.getElementById("max").value;
+
+                            // ? Kalau kosong, default ke hari ini dengan format yang benar
+                            d.minDateTime = minVal || moment().format('DD MMMM YYYY');
+                            d.maxDateTime = maxVal || moment().format('DD MMMM YYYY');
+                        },
+                        "dataSrc": function(json) {
+                            // ? DEBUGGING: Log received data
+                            if (json.data && json.data.length > 0) {
+                            }
+                            return json.data;
+                        }
+                    },
+                    "columns": [
+                        {
+                            "data": "id",  // ? GANTI dari "Id" ke "id" (lowercase)
+                            "name": "Id",
+                            "visible": false,
+                            "searchable": false
+                        },
+                        {
+                            "data": null,
+                            "orderable": false,
+                            "render": function (data, type, full, meta) {
+                                if (!canModifyData) {
+                                    return "<button type='button' class='btn btn-info' onclick='PrintData(" + full.id + ");'><i class='fas fa-print'></i></button>";  // ? full.id (lowercase)
+                                }
+
+                                var edit = "<button type='button' class='btn btn-warning' onclick='UpdateData(" + full.id + ");'><i class='fas fa-edit fa-lg'></i></button> ";  // ? full.id
+                                var print = "<button type='button' class='btn btn-info' onclick='PrintData(" + full.id + ");'><i class='fas fa-print'></i></button> ";  // ? full.id
+                                var post = full.saP_Response ? "" : "<button type='button' class='btn btn-success' onclick='PostData(" + full.id + ");'><i class='fas fa-upload'></i></button> ";  // ? full.id & saP_Response
+                                var dlete = "<button type='button' class='btn btn-danger' onclick='DeleteData(" + full.id + ");'><i class='fas fa-trash-alt'></i></button>";  // ? full.id
+                                return edit + print + post + dlete;
+                            }
+                        },
+                        {
+                            "data": "tank_Number",  // ? lowercase camelCase
+                            "name": "Tank_Number",
+                            "defaultContent": "-"
+                        },
+                        {
+                            "data": "ticket_Number",  // ? lowercase camelCase
+                            "name": "Ticket_Number",
+                            "defaultContent": "-"
+                        },
+                        {
+                            "data": "timestamp",  // ? lowercase
+                            "name": "Timestamp",
+                            "render": function (value) {
+                                if (!value) return "-";
+                                return moment(value).format('DD MMM YYYY HH:mm');
+                            }
+                        },
+                        {
+                            "data": "operation_Type",  // ? lowercase camelCase
+                            "name": "Operation_Type",
+                            "defaultContent": "-"
+                        },
+                        {
+                            "data": "operation_Status",  // ? lowercase camelCase
+                            "name": "Operation_Status",
+                            "render": function (data) {
+                                if (data == null) return "-";
+                                if (data == 1) return '<span class="badge badge-success">OPEN</span>';
+                                if (data == 2) return '<span class="badge badge-danger">CLOSE</span>';
+                                return '<span class="badge badge-secondary">UNKNOWN</span>';
+                            }
+                        },
+                        {
+                            "data": "liquidLevel",  // ? lowercase camelCase
+                            "name": "LiquidLevel",
+                            "render": function (data) {
+                                return data != null ? parseFloat(data).toFixed(0) : '0';
+                            }
+                        },
+                        {
+                            "data": "waterLevel",  // ? lowercase camelCase
+                            "name": "WaterLevel",
+                            "render": function (data) {
+                                return data != null ? parseFloat(data).toFixed(0) : '0';
+                            }
+                        },
+                        {
+                            "data": "liquidTemperature",  // ? lowercase camelCase
+                            "name": "LiquidTemperature",
+                            "render": function (data) {
+                                return data != null ? parseFloat(data).toFixed(2) : '0.00';
+                            }
+                        },
+                        {
+                            "data": "testTemperature",  // ? lowercase camelCase
+                            "name": "TestTemperature",
+                            "render": function (data) {
+                                return data != null ? parseFloat(data).toFixed(2) : '0.00';
+                            }
+                        },
+                        {
+                            "data": "liquidDensity",  // ? lowercase camelCase
+                            "name": "LiquidDensity",
+                            "render": function (data) {
+                                return data != null ? parseFloat(data).toFixed(3) : '0.000';
+                            }
+                        },
+                        {
+                            "data": "saP_Response",
+                            "name": "SAP_Response",
+                            "render": function (data, type, row) {
+                                // ? Handle empty/null response
+                                if (!data || data === "") {
+                                    return '<span class="badge badge-warning">Not Synced</span>';
+                                }
+
+                                try {
+                                    // ? Parse JSON string from SAP response
+                                    var sapData = JSON.parse(data);
+
+                                    // ? Check response type and show DescMsg
+                                    if (sapData.Type === "S") {
+                                        // Success - show DescMsg in green badge
+                                        var message = sapData.DescMsg || "Success";
+                                        return '<span class="badge badge-success">' + message + '</span>';
+                                    } else if (sapData.Type === "E") {
+                                        // Error - show DescMsg in red badge
+                                        var message = sapData.DescMsg || "Error";
+                                        return '<span class="badge badge-danger">' + message + '</span>';
+                                    } else if (sapData.Type === "W") {
+                                        // Warning - show DescMsg in yellow badge
+                                        var message = sapData.DescMsg || "Warning";
+                                        return '<span class="badge badge-warning">' + message + '</span>';
+                                    } else {
+                                        // Unknown type
+                                        return '<span class="badge badge-secondary">Unknown Status</span>';
+                                    }
+                                } catch (e) {
+                                    // ? Fallback if JSON parsing fails
+                                    console.error("Failed to parse SAP response for row:", row.id, e);
+
+                                    // Try to extract DescMsg from malformed JSON using regex
+                                    var descMsgMatch = data.match(/"DescMsg":"([^"]+)"/);
+                                    if (descMsgMatch && descMsgMatch[1]) {
+                                        var message = descMsgMatch[1];
+                                        // Check if it's success or error based on message content
+                                        if (message.toLowerCase().includes("success") || message.toLowerCase().includes("posted")) {
+                                            return '<span class="badge badge-success">' + message + '</span>';
+                                        } else if (message.toLowerCase().includes("error") || message.toLowerCase().includes("failed")) {
+                                            return '<span class="badge badge-danger">' + message + '</span>';
+                                        } else {
+                                            return '<span class="badge badge-warning">' + message + '</span>';
+                                        }
+                                    }
+
+                                    // Ultimate fallback - simple string check
+                                    if (data.includes("Success") || data.includes("succesfully") || data.includes("posted")) {
+                                        return '<span class="badge badge-success">Synced Successfully</span>';
+                                    } else if (data.includes("Error") || data.includes("Failed")) {
+                                        return '<span class="badge badge-danger">Sync Failed</span>';
+                                    } else {
+                                        return '<span class="badge badge-secondary">Unknown</span>';
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                });
+
+                // Auto reload table
+                var refreshIntervalSeconds = @ViewBag.RefreshIntervalSeconds ?? 10;
+                var refreshIntervalMs = refreshIntervalSeconds * 1000;
+                setInterval(reloadTable, refreshIntervalMs);
+            });
+
+            // ? FIX: PrintData function (alias untuk DownloadData)
+            function PrintData(Id) {
+                DownloadData(Id);
+            }
+
+            // ? FIX: PostData function
+            function PostData(Id) {
+                if (confirm('Upload ticket to SAP?')) {
+                    $.ajax({
+                        type: 'GET',
+                        url: '@Url.Action("PostData")',
+                        data: { id: Id },
+                        success: function (res) {
+                            oTable.ajax.reload(null, false);
+                            if (res.Type === "S") {
+                                alert('? Success: ' + res.DescMsg);
+                            } else if (res.Type === "E") {
+                                alert('? Error: ' + res.DescMsg);
+                            } else if (res.Type === "W") {
+                                alert('?? Warning: ' + res.DescMsg);
+                            } else {
+                                alert('?? Info: ' + JSON.stringify(res));
+                            }
+                        },
+                        error: function (xhr) {
+                            alert('? Error: ' + xhr.responseText);
+                        }
+                    });
+                }
+            }
+
+            //Export Excel - Send filter parameters to get ALL data from database
+            function ExportExcel() {
+                // Get and format date values
+                var dateFromValue = document.getElementById("min").value;
+                var dateToValue = document.getElementById("max").value;
+
+                // Format dates to ISO format if they have values
+                var dateFrom = dateFromValue ? moment(dateFromValue, 'D MMMM yyyy').format('YYYY-MM-DD HH:mm:ss') : null;
+                var dateTo = dateToValue ? moment(dateToValue, 'D MMMM yyyy').format('YYYY-MM-DD HH:mm:ss') : null;
+
+                var opStatus = document.getElementById("operation-status").value;
+                var filterData = {
+                    TankName: document.getElementById("tank-name").value,
+                    OperationType: document.getElementById("operation-type").value,
+                    OperationStatus: opStatus ? parseInt(opStatus) : null,
+                    TicketNumber: document.getElementById("ticket-number").value,
+                    DateFrom: dateFrom,
+                    DateTo: dateTo
+                };
+
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("ExportToExcel", "TankTicket")',
+                    data: filterData,  // Send as form data, NOT JSON.stringify
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (response, status, xhr) {
+                        var filename = "";
+                        var disposition = xhr.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            var matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                            if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+                        }
+                        var type = xhr.getResponseHeader('Content-Type');
+
+                        var blob = new Blob([response], { type: type });
+
+                        if (typeof window.navigator.msSaveBlob !== 'undefined') {
+                            // IE workaround
+                            window.navigator.msSaveBlob(blob, filename);
+                        } else {
+                            var URL = window.URL || window.webkitURL;
+                            var downloadUrl = URL.createObjectURL(blob);
+
+                            if (filename) {
+                                // Use HTML5 a[download] attribute to specify filename
+                                var a = document.createElement("a");
+                                // Safari doesn't support this yet
+                                if (typeof a.download === 'undefined') {
+                                    window.location.href = downloadUrl;
+                                } else {
+                                    a.href = downloadUrl;
+                                    a.download = filename;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                }
+                            } else {
+                                window.location.href = downloadUrl;
+                            }
+
+                            setTimeout(function () { URL.revokeObjectURL(downloadUrl); }, 100); // Cleanup
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+
+            }
+
+            //update data
+            function UpdateData(Id) {
+                var toSend =
+                {
+                    id: Id
+                };
+                $.ajax({
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "@Url.Action("EditTankTicket","TankTicket")",
+                    data: toSend,
+                    success: function (res) {
+                        $("#form-modal").modal();
+                        $("#form-modal .modal-body").html(res);
+                        $("#form-modal .modal-title").html('Edit Tank Ticket');
+                        $("#form-modal").modal('show');
+                    },
+                    error: function (res) {
+                    }
+                })
+            }
+            //update data
+            function UploadData(Id) {
+
+                var toSend =
+                {
+                    id: Id
+                };
+                $.ajax({
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "@Url.Action("PostData")",
+                    data: toSend,
+                    success: function (res) {
+                        oTable.ajax.reload(null, false);
+                        var response = JSON.stringify(res);
+                        alert(response);
+                    },
+                    error: function (res) {
+                        var response = JSON.stringify(res);
+                        alert(response);
+                    }
+                })
+            }
+            //end update data
+            //start delete data
+            function DeleteData(Id) {
+                if (confirm('Are you sure want to delete this data ?')) {
+                    var toSend =
+                    {
+                        id: Id
+                    };
+                    $.ajax({
+                        type: 'POST',
+                        url: "@Url.Action("Delete")",
+                        data: toSend,
+                        success: function (res) {
+                            oTable.ajax.reload(null, false);
+                        },
+                        error: function (err) {
+                        }
+                    })
+                }
+            }
+
+            function GetData(Id, method, Timerequest) {
+                var toSend =
+                {
+                    id: Id,
+                    timerequest: Timerequest
+                };
+                $.ajax({
+                    type: 'POST',
+                    url: "@Url.Action("GetData")",
+                    data: toSend,
+                    success: function (result) {
+                        setData(method, result);
+
+                    },
+                    error: function (err) {
+                    }
+                })
+            }
+            function GetDataEdit(Id, Timerequest) {
+                var toSend =
+                {
+                    id: Id,
+                    timerequest: Timerequest
+                };
+                $.ajax({
+                    type: 'POST',
+                    url: "@Url.Action("GetData")",
+                    data: toSend,
+                    success: function (result) {
+                        setDataEdit(result);
+
+                    },
+                    error: function (err) {
+                    }
+                })
+            }
+
+            // GET DATA OPEN TANK TICKET
+             function GetDataOpen(Id, method, Timerequest) {
+                 var toSend =
+                 {
+                     id: Id,
+                     timerequest: Timerequest
+                 };
+                 $.ajax({
+                     type: 'POST',
+                     url: "@Url.Action("GetData","TankTicket")",
+                     data: toSend,
+                     success: function (result) {
+                         setDataOpen(method, result);
+
+                     },
+                     error: function (err) {
+                     }
+                 })
+             }
+
+             // GET DATA CLOSE TANK TICKET
+             function GetDataClose(Id, method, Timerequest) {
+                 var toSend =
+                 {
+                     id: Id,
+                     timerequest: Timerequest
+                 };
+                 $.ajax({
+                     type: 'POST',
+                     url: "@Url.Action("GetData", "TankTicket")",
+                     data: toSend,
+                     success: function (result) {
+                         setDataClose(method, result);
+
+                     },
+                     error: function (err) {
+                     }
+                 })
+            }
+            ///set data
+            function setData(method, result) {
+                if (method == "Automatic") {
+                    document.getElementById("level").value = parseFloat(result.liquidLevel).toFixed(0);
+                    document.getElementById("water").value = parseFloat(result.waterLevel).toFixed(0);
+                    document.getElementById("temperature").value = parseFloat(result.liquidTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("testTemperature").value = parseFloat(result.liquidTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("density").value = parseFloat(result.liquidDensity).toFixed(3).replace(',', '.');
+                }
+                else {
+                    document.getElementById("level").value = parseFloat(0);
+                    document.getElementById("water").value = parseFloat(0);
+                    document.getElementById("temperature").value = parseFloat(0);
+                    document.getElementById("testTemperature").value = parseFloat(0);
+                    document.getElementById("density").value = parseFloat(0);
+                }
+            }
+            //set data edit
+            function setDataEdit(result) {
+                document.getElementById("edlevel").value = parseFloat(result.liquidLevel).toFixed(0);
+                document.getElementById("edwater").value = parseFloat(result.waterLevel).toFixed(0);
+                document.getElementById("edtemperature").value = parseFloat(result.liquidTemperature).toFixed(2).replace(',', '.');
+                document.getElementById("edtestTemperature").value = parseFloat(result.liquidTemperature).toFixed(2).replace(',', '.');
+                document.getElementById("eddensity").value = parseFloat(result.liquidDensity).toFixed(3).replace(',', '.');
+                
+            }
+
+            // SETDATA OPEN
+            function setDataOpen(method, result) {
+                if (method == "Automatic") {
+                    document.getElementById("levelOpen").value = parseFloat(result.liquidLevel).toFixed(0);
+                    document.getElementById("waterOpen").value = parseFloat(result.waterLevel).toFixed(0);
+                    document.getElementById("temperatureOpen").value = parseFloat(result.liquidTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("testTemperatureOpen").value = parseFloat(result.testTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("densityOpen").value = parseFloat(result.liquidDensity).toFixed(3).replace(',', '.');
+                }
+                else {
+                    document.getElementById("levelOpen").value = parseFloat(0);
+                    document.getElementById("waterOpen").value = parseFloat(0);
+                    document.getElementById("temperatureOpen").value = parseFloat(2);
+                    document.getElementById("testTemperatureOpen").value = parseFloat(2);
+                    document.getElementById("densityOpen").value = parseFloat(3);
+                }
+            }
+
+            // SETDATA CLOSE
+            function setDataClose(method, result) {
+                if (method == "Automatic") {
+                    document.getElementById("levelClose").value = parseFloat(result.liquidLevel).toFixed(0);
+                    document.getElementById("waterClose").value = parseFloat(result.waterLevel).toFixed(0);
+                    document.getElementById("temperatureClose").value = parseFloat(result.liquidTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("testTemperatureClose").value = parseFloat(result.testTemperature).toFixed(2).replace(',', '.');
+                    document.getElementById("densityClose").value = parseFloat(result.liquidDensity).toFixed(3).replace(',', '.');
+                }
+                else {
+                    document.getElementById("levelClose").value = parseFloat(0);
+                    document.getElementById("waterClose").value = parseFloat(0);
+                    document.getElementById("temperatureClose").value = parseFloat(2);
+                    document.getElementById("testTemperatureClose").value = parseFloat(2);
+                    document.getElementById("densityClose").value = parseFloat(3);
+                }
+            }
+
+            //reload data
+            function reloadTable() {
+                oTable.ajax.reload(null, false);
+            }
+            function reset() {
+                document.getElementById("tank-name").value = 0;
+                document.getElementById("operation - type").value = "--All Operation Type--";
+                reloadTable();
+            }
+        </script>
+        <script>
+            var minDate, maxDate;
+
+            // Custom filtering function which will search data in column four between two values
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                // Create date inputs
+                minDate = new DateTime($('#min'), {
+                    format: 'D MMMM yyyy'
+                });
+                maxDate = new DateTime($('#max'), {
+                    format: 'D MMMM yyyy'
+                });
+            });
+        </script>
+
+        @*Function Download Tank Ticket*@
+        <script type="text/javascript" asp-append-version="true">
+
+            function DownloadData(tankTicketId) {
+                var toSend =
+                {
+                    id: tankTicketId
+                };
+                $.ajax({
+                    url: '@Url.Action("PrintTankTicket", "TankTicket")',
+                    data: toSend,
+                    method: 'POST',
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (response, status, xhr) {
+                        // Create a hidden link to download the file
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(new Blob([response]));
+                        link.download = xhr.getResponseHeader('Content-Disposition').split('"')[1];
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle the error
+                    }
+                });
+            }
+
+            function PrintAllTicket() {
+                var dataRequest =
+                {
+                    TankNameFilter: document.getElementById("tank-name").value,
+                    OperationType: document.getElementById("operation-type").value,
+                    OperationStatus: document.getElementById("operation-status").value,
+                    TicketNumber: document.getElementById("ticket-number").value,
+                    minDateTime: document.getElementById("min").value,
+                    maxDateTime: document.getElementById("max").value
+                };
+                $.ajax({
+                    url: '@Url.Action("PrintAllTank", "TankTicket")',
+                    data: dataRequest,
+                    method: 'POST',
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (response, status, xhr) {
+                        // Create a hidden link to download the file
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(new Blob([response]));
+                        link.download = xhr.getResponseHeader('Content-Disposition').split('"')[1];
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle the error
+                    }
+                });
+            }
+
+
+
+        </script>
+
+        <!-- ? NEW: Tank Movement Threshold Modal Handler -->
+        <script type="text/javascript">
+            // ? Store tankTicketId for threshold modal
+            var thresholdPendingTicketId = null;
+
+            // ? Function untuk menampilkan modal Tank Movement threshold
+            // ? FIXED: Use window scope so it can be called from AddNewTankTicket
+            window.showTankMovementThresholdModal = function(tankNumber, tankTicketId) {
+
+                // ? Store ticketId for use when saving
+                thresholdPendingTicketId = tankTicketId || null;
+
+                // Set tank number
+                $('#thresholdTankNumber').val(tankNumber);
+                
+                // Get default values dari Tank (optional - bisa diisi via AJAX)
+                $.ajax({
+                    url: '@Url.Action("GetTankMovementDefaults", "TankMovements")',
+                    type: 'GET',
+                    data: { tankNumber: tankNumber },
+                    success: function(data) {
+                        if (data && data.isValid) {
+                            $('#thresholdTargetLevel').val(data.targetLevel || 5000);
+                            $('#thresholdAlarmMinutes').val(data.alarmMinutes || 5);
+                            $('#thresholdStagnantMinutes').val(data.stagnantMinutes || 5);
+                        }
+                    },
+                    error: function(err) {
+                        // Use default values
+                        $('#thresholdTargetLevel').val(5000);
+                        $('#thresholdAlarmMinutes').val(5);
+                        $('#thresholdStagnantMinutes').val(5);
+                    }
+                });
+                
+                // Show modal (Bootstrap 4)
+                $('#tankMovementThresholdModal').modal('show');
+            }
+            
+            // ? Handler untuk tombol Skip
+            $(document).on('click', '#btnSkipThreshold', function() {
+                $('#tankMovementThresholdModal').modal('hide');
+                
+                // Reload table
+                if (typeof oTable !== 'undefined' && oTable && oTable.ajax) {
+                    oTable.ajax.reload(null, false);
+                }
+            });
+            
+            // ? Handler untuk tombol Simpan
+            $(document).on('click', '#btnSaveThreshold', function() {
+                var tankNumber = $('#thresholdTankNumber').val();
+                var targetLevel = parseInt($('#thresholdTargetLevel').val()) || 5000;
+                var alarmMinutes = parseInt($('#thresholdAlarmMinutes').val()) || 5;
+                var stagnantMinutes = parseInt($('#thresholdStagnantMinutes').val()) || 5;
+                
+                // Disable button during save
+                var btn = $(this);
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Menyimpan...');
+                
+                $.ajax({
+                    url: '@Url.Action("SetTankMovementThreshold", "TankMovements")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        TankNumber: tankNumber,
+                        TargetLevel: targetLevel,
+                        AlarmMinutes: alarmMinutes,
+                        StagnantThresholdMinutes: stagnantMinutes,
+                        TankTicketId: thresholdPendingTicketId  // ? Include tankTicketId from ROT Open
+                    }),
+                    success: function(response) {
+                        btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Simpan & Aktifkan');
+
+                        if (response.isValid) {
+                            // ? Clear pending ticketId after save
+                            thresholdPendingTicketId = null;
+                            $('#tankMovementThresholdModal').modal('hide');
+                            alert('? Tank Movement monitoring berhasil diaktivasi!\n\nAlarm akan berbunyi jika tidak ada flowrate selama ' + stagnantMinutes + ' menit.');
+                        } else {
+                            alert('? Error: ' + (response.message || 'Gagal menyimpan threshold'));
+                        }
+                        
+                        // Reload table
+                        if (typeof oTable !== 'undefined' && oTable && oTable.ajax) {
+                            oTable.ajax.reload(null, false);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Simpan & Aktifkan');
+                        console.error("[ThresholdModal] Error:", error);
+                        alert('? Error: ' + error);
+                    }
+                });
+            });
+        </script>
+
+        @* ? DISABLED: TICKET NO-FLOWRATE ALARM POLLING - temporarily disabled *@
+        @*
+        <script type="text/javascript">
+            // ? Tank Ticket No Flowrate Alarm Polling (In-Memory, Auto-Clear)
+            var ticketAlarmInterval;
+            var alarmPollingMs = @ViewBag.TicketNoFlowrateAlarmPollingMs ?? 3000; // Default 3 seconds
+            var ticketAlarmAudio = new Audio('/audio/alarm-low.mp3'); // Reuse existing alarm sound
+            ticketAlarmAudio.loop = true;
+            var isTicketAlarmPlaying = false;
+
+            function checkTicketNoFlowrateAlarm() {
+                $.ajax({
+                    url: '@Url.Action("TriggerTicketNoFlowrateAlarm", "TankTicket")',
+                    type: 'GET',
+                    contentType: 'application/json; charset=utf-8',
+                    success: function (response) {
+                        if (response.isValid && response.data.length > 0) {
+
+                            // Play alarm sound if not already playing
+                            if (!isTicketAlarmPlaying) {
+                                ticketAlarmAudio.play().catch(function(error) {
+                                });
+                                isTicketAlarmPlaying = true;
+                            }
+
+                            // Log alarm messages to console
+                            response.data.forEach(function(alarm) {
+                                var flowrate = alarm.currentFlowrate || alarm.CurrentFlowrate || 0;
+                                var elapsed = alarm.elapsedMinutes || alarm.ElapsedMinutes || 0;
+                                console.log(`  - Elapsed: ${elapsed} min, Flowrate: ${flowrate.toFixed(2)} KL/h`);
+                            });
+
+                            // TODO: Show visual notification (optional - bisa pakai toast/modal)
+                            // showAlarmNotification(response.data);
+                        } else {
+                            // ? AUTO-CLEAR: Stop alarm sound if no alarms (ada flowrate)
+                            if (isTicketAlarmPlaying) {
+                                ticketAlarmAudio.pause();
+                                ticketAlarmAudio.currentTime = 0;
+                                isTicketAlarmPlaying = false;
+                                console.log("[TicketAlarm] Alarm auto-cleared (flowrate detected)");
+                            }
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("[TicketAlarm] Check error:", error);
+                    }
+                });
+            }
+
+            // ? ACK single ticket alarm
+            function ackTicketAlarm(ticketId) {
+                $.ajax({
+                    url: '@Url.Action("AckTicketNoFlowrateAlarm", "TankTicket")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(ticketId),
+                    success: function (response) {
+                        if (response.isValid) {
+                            // Stop alarm sound temporarily (will restart after threshold if no flowrate)
+                            if (isTicketAlarmPlaying) {
+                                ticketAlarmAudio.pause();
+                                ticketAlarmAudio.currentTime = 0;
+                                isTicketAlarmPlaying = false;
+                            }
+                            // Optional: Show success message
+                            // alert("Alarm acknowledged. Countdown restarted.");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("[TicketAlarm] ACK error:", error);
+                    }
+                });
+            }
+
+            // ? ACK all ticket alarms
+            function ackAllTicketAlarms() {
+                $.ajax({
+                    url: '@Url.Action("AckAllTicketNoFlowrateAlarms", "TankTicket")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    success: function (response) {
+                        if (response.isValid) {
+                            // Stop alarm sound
+                            if (isTicketAlarmPlaying) {
+                                ticketAlarmAudio.pause();
+                                ticketAlarmAudio.currentTime = 0;
+                                isTicketAlarmPlaying = false;
+                            }
+                            // Optional: Show success message
+                            // alert(response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("[TicketAlarm] ACK ALL error:", error);
+                    }
+                });
+            }
+
+            // ? Start polling when page loads
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function($) {
+                console.log(`[TicketAlarm] Starting alarm polling (interval: ${alarmPollingMs}ms)`);
+                checkTicketNoFlowrateAlarm(); // Initial check
+                ticketAlarmInterval = setInterval(checkTicketNoFlowrateAlarm, alarmPollingMs);
+            });
+
+            // ? Stop polling when leaving page (cleanup)
+            $(window).on('beforeunload', function() {
+                clearInterval(ticketAlarmInterval);
+                if (isTicketAlarmPlaying) {
+                    ticketAlarmAudio.pause();
+                }
+            });
+        </script>
+        *@
+    }
+    
+
+    <!-- ? MODAL: Tank Movement Threshold Setting (ROT OPEN) - Bootstrap 4 Compatible -->
+<div class="modal fade" id="tankMovementThresholdModal" tabindex="-1" role="dialog" aria-labelledby="tankMovementThresholdModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="tankMovementThresholdModalLabel">
+                    <i class="fas fa-tachometer-alt mr-2"></i> Tank Movement Monitoring
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <strong>ROT OPEN berhasil!</strong> Atur setting monitoring Tank Movement.
+                </div>
+                
+                <div class="alert alert-info" style="font-size: 0.9rem;">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Fungsi Alarm Flowrate:</strong><br/>
+                    Alarm akan berbunyi jika <strong>tidak ada flowrate</strong> (flowrate = 0) selama waktu yang ditentukan pada "Stagnant Threshold".
+                </div>
+                
+                <input type="hidden" id="thresholdTankNumber" value="" />
+                
+                <div class="form-group">
+                    <label for="thresholdTargetLevel" class="font-weight-bold">Target Level (mm)</label>
+                    <input type="number" class="form-control form-control-lg" id="thresholdTargetLevel" placeholder="5000">
+                    <small class="text-muted">Level target yang ingin dicapai. Default: Safe Capacity.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="thresholdAlarmMinutes" class="font-weight-bold">Alarm Sebelum Target (menit)</label>
+                    <input type="number" class="form-control form-control-lg" id="thresholdAlarmMinutes" value="5" min="1" max="60">
+                    <small class="text-muted">Alarm berbunyi X menit sebelum mencapai target level.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="thresholdStagnantMinutes" class="font-weight-bold">
+                        <i class="fas fa-bell text-warning"></i> Stagnant Threshold (menit)
+                    </label>
+                    <input type="number" class="form-control form-control-lg" id="thresholdStagnantMinutes" value="5" min="1" max="60">
+                    <small class="text-muted">
+                        <strong>Alarm "No Flowrate"</strong> akan berbunyi jika tidak ada pergerakan (flowrate = 0) selama X menit.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-lg" id="btnSkipThreshold">
+                    <i class="fas fa-times mr-1"></i> Skip
+                </button>
+                <button type="button" class="btn btn-primary btn-lg" id="btnSaveThreshold">
+                    <i class="fas fa-save mr-1"></i> Simpan & Aktifkan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</head>
+
+<!-- Begin Page Content -->
+
+<div class="container-fluid">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Tank Ticket</h1>
+        <a value="reload" onclick="reloadTable()" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
+            <i class="fas fa-redo-alt"></i>
+        </a>
+    </div>
+
+    <!-- Submain Content -->
+    <div class="card shadow-lg rounded" style="width: 100%;">
+        <div class="card-header bg-gradient-info"></div>
+        <div class="card-body">
+
+            <!-- Tank Filter -->
+            <form>
+                <div class="form-row">
+                    <div class="col-md-3">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <label class="input-group-text" for="tank">Tank</label>
+                            </div>
+                            <select id="tank-name" onchange="reloadTable();" class="custom-select" id="tank" asp-items=@(new SelectList(ViewBag.TankId,"Tank_Name","Tank_Name"))>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <label class="input-group-text" for="op-type">Operation Type</label>
+                            </div>
+                            <select id="operation-type" onchange="reloadTable();" class="custom-select" id="op-type" asp-items=@(new SelectList(ViewBag.ticketTypes,"Operation","Description"))>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <label class="input-group-text" for="op-stat">Operation Status</label>
+                            </div>
+                            <select onchange="reloadTable();" class="custom-select" id="operation-status">
+                                <option selected value=0>-- All Status --</option>
+                                <option value=1>Open</option>
+                                <option value=2>Close</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="Ticket-Number"><i class="fab fa-slack-hash"></i></span>
+                            </div>
+                            <input onchange="reloadTable();" id="ticket-number" type="text" class="form-control" placeholder="Ticket Number" aria-label="Ticket-Number" aria-describedby="Ticket-Number">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-2">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="min-date">From</span>
+                            </div>
+                            <input onchange="reloadTable();" type="text" name="min-date" id="min" class="form-control" placeholder="Start From" aria-label="Min-Date" aria-describedby="min-date" value="@DateTime.Now.ToString("dd MMMM yyyy")">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="max-date">To</span>
+                            </div>
+                            <input onchange="reloadTable();" type="text" name="max-date" id="max" class="form-control" placeholder="Until" aria-label="Max-date" aria-describedby="max-date" value="@DateTime.Now.ToString("dd MMMM yyyy")">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group mb-1">
+                                    <button type="reset" class="btn btn-warning" style="width: 100%;" onclick="reset();"><i class="fas fa-undo-alt"></i> Reset Filter</button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group mb-1">
+                                    <button type="reset" class="btn btn-success" style="width: 100%;" onclick="PrintAllTicket();"><i class="fas fa-print"></i> Print All</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="row">
+                            @* ? Export Excel button *@
+                            <div class="col-md-4">
+                                <div class="input-group mb-1">
+                                    <button type="reset" class="btn btn-success" style="width: 100%;" onclick="ExportExcel();"><i class="fas fa-solid fa-file-excel"></i> Export Excel</button>
+                                </div>
+                            </div>
+
+                            @* ? Only admins can create new tank tickets *@
+                            @if (User.CanModifyData())
+                            {
+                                <div class="col-md-4">
+                                    <div class="input-group mb-1">
+                                        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="showInPopup('@Url.Action("AddNewTankTicket","TankTicket",null,Context.Request.Scheme)','Add New Tank Ticket')"><i class="fas fa-plus"></i> New</button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group mb-1">
+                                        <button type="button" class="btn btn-warning" style="width: 100%;" onclick="showAlarmSettingsModal(); return false;"><i class="fas fa-bell"></i> Set Alarm</button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                @* ? If user cannot modify, center Export Excel button *@
+                                <div class="col-md-4"></div>
+                                <div class="col-md-4"></div>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+
+            <!-- End Tank Filter-->
+            <!-- Divider -->
+            <hr class="sidebar-divider my-3">
+
+            <!-- Tank Table -->
+            @await Html.PartialAsync("_ViewAll", Model)
+
+            <!-- End Tank table -->
+
+        </div>
+    </div>
+    <!-- End Submain Content -->
+</div>
+<!-- End Page Content -->
+
+<!-- ========================================== -->
+<!-- Modal: Tank Alarm Management (Active Alarms + Settings) -->
+<!-- ========================================== -->
+<div class="modal fade" id="alarmSettingsModal" tabindex="-1" role="dialog" aria-labelledby="alarmSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="alarmSettingsModalLabel">
+                    <i class="fas fa-bell"></i> Tank Alarm Management
+                </h5>
+                <button type="button" class="close text-white" onclick="closeAlarmSettingsModal();" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" id="alarmModalTabs" role="tablist" style="margin-left: 15px; margin-right: 15px; margin-top: 10px;">
+                <li class="nav-item">
+                    <a class="nav-link active" id="activeAlarmsTab" data-toggle="tab" href="#activeAlarmsPanel" role="tab" onclick="switchToActiveAlarmsTab()">
+                        <i class="fas fa-exclamation-triangle"></i> Active Alarms <span id="alarmBadge" class="badge badge-danger">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="historyTab" data-toggle="tab" href="#historyPanel" role="tab" onclick="switchToHistoryTab()">
+                        <i class="fas fa-history"></i> History
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="settingsTab" data-toggle="tab" href="#settingsPanel" role="tab" onclick="switchToSettingsTab()">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+            </ul>
+
+            <div class="modal-body">
+                <!-- Tab Content -->
+                <div class="tab-content" id="alarmModalTabContent">
+
+                    <!-- ========================================== -->
+                    <!-- Panel 1: Active Alarms (Monitoring) -->
+                    <!-- ========================================== -->
+                    <div class="tab-pane fade show active" id="activeAlarmsPanel" role="tabpanel">
+                        <div id="activeAlarmsContainer">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-warning" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading active alarms...</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3" id="activeAlarmsActions" style="display: none;">
+                            <button type="button" class="btn btn-success btn-sm" onclick="bulkAckAllAlarms()">
+                                <i class="fas fa-check-double"></i> ACK All Alarms
+                            </button>
+                            <button type="button" class="btn btn-info btn-sm" onclick="refreshActiveAlarms()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- Panel 2: History (Stopped/Inactive) -->
+                    <!-- ========================================== -->
+                    <div class="tab-pane fade" id="historyPanel" role="tabpanel">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> View and manage stopped Tank Movement records. Use lazy loading (10 records per page).
+                        </div>
+
+                        <div id="historyContainer">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading history...</p>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Delete Actions -->
+                        <div class="mt-3" id="historyBulkActions" style="display: none;">
+                            <div class="form-check d-inline-block mr-3">
+                                <input class="form-check-input" type="checkbox" id="selectAllHistory" onchange="toggleSelectAllHistory()">
+                                <label class="form-check-label" for="selectAllHistory">
+                                    <strong>Select All</strong>
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="bulkDeleteHistory()" id="btnBulkDelete" disabled>
+                                <i class="fas fa-trash"></i> Delete Selected (<span id="selectedCount">0</span>)
+                            </button>
+                        </div>
+
+                        <!-- Infinite Scroll Loader -->
+                        <div class="text-center py-3" id="historyLoader" style="display: none;">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="sr-only">Loading more...</span>
+                            </div>
+                            <p class="mt-2">Loading more records...</p>
+                        </div>
+
+                        <!-- End of Data Message -->
+                        <div class="text-center py-3" id="historyEndMessage" style="display: none;">
+                            <p class="text-muted"><i class="fas fa-check-circle"></i> All records loaded</p>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- Panel 3: Settings (Configuration) -->
+                    <!-- ========================================== -->
+                    <div class="tab-pane fade" id="settingsPanel" role="tabpanel">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Configure alarm settings for Tank Movement monitoring (ROT operations).
+                            <br/><small class="text-muted">Only tanks with <strong>ROT OPEN</strong> tickets in the last 3 days are shown.</small>
+                        </div>
+
+                        <form id="alarmSettingsForm">
+                            <div class="form-group">
+                                <label for="alarmTankSelect"><strong>Select Tank (ROT OPEN):</strong></label>
+                                <div class="input-group">
+                                    <select class="form-control" id="alarmTankSelect" name="tankName" required onchange="onAlarmTankSelected()">
+                                        <option value="">-- Loading tanks... --</option>
+                                    </select>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="loadTanksWithRecentROT()" title="Refresh tank list">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <small id="selectedTicketInfo" class="form-text text-muted"></small>
+                            </div>
+                            <!-- Hidden field to store selected ticketId -->
+                            <input type="hidden" id="selectedAlarmTicketId" value="" />
+
+                            <div id="settingsFormGroup" style="display: none;">
+                                <hr />
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="targetLevel"><strong>Target Level (mm):</strong></label>
+                                            <input type="number" class="form-control" id="targetLevel" name="targetLevel" placeholder="e.g., 5000" />
+                                            <small class="form-text text-muted">Leave empty to use Safe Capacity from tank configuration.</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="stagnantThreshold"><strong>Stagnant Threshold (minutes):</strong></label>
+                                            <input type="number" class="form-control" id="stagnantThreshold" name="stagnantThresholdMinutes" placeholder="Default: 5" min="1" max="60" />
+                                            <small class="form-text text-muted">Alarm will trigger if no flowrate for this duration.</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isManuallyConfigured" name="isManuallyConfigured" checked />
+                                    <label class="form-check-label" for="isManuallyConfigured">
+                                        <strong>Lock Manual Settings</strong> (prevent auto-polling from overwriting)
+                                    </label>
+                                </div>
+
+                                <div class="alert alert-secondary mt-3">
+                                    <small>
+                                        <strong>Note:</strong> If you uncheck "Lock Manual Settings", the system will automatically update settings from new tickets (FDM Web compatibility mode).
+                                    </small>
+                                </div>
+
+                                <div id="currentSettingsInfo" class="mt-3"></div>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAlarmSettingsModal();"><i class="fas fa-times"></i> Close</button>
+                <!-- Save button only visible in Settings tab -->
+                <button type="button" class="btn btn-warning" id="btnSaveAlarmSettings" onclick="saveAlarmSettings()" style="display: none;">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global variable untuk alarm auto-refresh interval
+    var alarmRefreshInterval = null;
+
+    // ========================================
+    // Function: Show Alarm Settings Modal
+    // ========================================
+    window.showAlarmSettingsModal = function() {
+
+        try {
+            // Reset form
+            if ($('#alarmSettingsForm')[0]) {
+                $('#alarmSettingsForm')[0].reset();
+            }
+
+            // Hide settings form group initially
+            $('#settingsFormGroup').hide();
+            $('#currentSettingsInfo').html('');
+
+            // ? FIX: Manual modal show (jQuery conflict workaround)
+            // Because jQuery is loaded twice in _Scripts.cshtml, Bootstrap modal plugin is removed
+            var modalElement = $('#alarmSettingsModal');
+            modalElement.addClass('show');
+            modalElement.css('display', 'block');
+            modalElement.attr('aria-modal', 'true');
+            modalElement.attr('aria-hidden', 'false');
+
+            // Add backdrop
+            if ($('.modal-backdrop').length === 0) {
+                $('body').append('<div class="modal-backdrop fade show"></div>');
+            }
+
+            // Add modal-open class to body
+            $('body').addClass('modal-open');
+
+            // ? Load active alarms by default (tab 1)
+            switchToActiveAlarmsTab();
+            loadActiveAlarms();
+
+            // ? Start auto-refresh (every 5 seconds)
+            if (alarmRefreshInterval) {
+                clearInterval(alarmRefreshInterval);
+            }
+            alarmRefreshInterval = setInterval(function() {
+                // Only refresh if Active Alarms tab is active
+                if ($('#activeAlarmsTab').hasClass('active')) {
+                    refreshActiveAlarms();
+                }
+            }, 5000); // 5 seconds
+        } catch (error) {
+            console.error('[showAlarmSettingsModal] Error opening modal:', error);
+            alert('Error opening alarm settings modal. Please check console for details.');
+        }
+    };
+
+    // ========================================
+    // Function: Close Alarm Settings Modal
+    // ========================================
+    window.closeAlarmSettingsModal = function() {
+
+        // ? Stop auto-refresh interval
+        if (alarmRefreshInterval) {
+            clearInterval(alarmRefreshInterval);
+            alarmRefreshInterval = null;
+        }
+
+        // Hide modal
+        var modalElement = $('#alarmSettingsModal');
+        modalElement.removeClass('show');
+        modalElement.css('display', 'none');
+        modalElement.attr('aria-modal', 'false');
+        modalElement.attr('aria-hidden', 'true');
+
+        // Remove backdrop
+        $('.modal-backdrop').remove();
+
+        // Remove modal-open class from body
+        $('body').removeClass('modal-open');
+    };
+
+    // ========================================
+    // Function: Switch to Active Alarms Tab
+    // ========================================
+    window.switchToActiveAlarmsTab = function() {
+
+        // Manual tab switching (Bootstrap tab plugin not available due to jQuery conflict)
+        $('#activeAlarmsTab').addClass('active');
+        $('#historyTab').removeClass('active');
+        $('#settingsTab').removeClass('active');
+
+        $('#activeAlarmsPanel').addClass('show active');
+        $('#historyPanel').removeClass('show active');
+        $('#settingsPanel').removeClass('show active');
+
+        // Hide Save button in footer
+        $('#btnSaveAlarmSettings').hide();
+    };
+
+    // ========================================
+    // Function: Switch to History Tab
+    // ========================================
+    window.switchToHistoryTab = function() {
+
+        // Manual tab switching
+        $('#historyTab').addClass('active');
+        $('#activeAlarmsTab').removeClass('active');
+        $('#settingsTab').removeClass('active');
+
+        $('#historyPanel').addClass('show active');
+        $('#activeAlarmsPanel').removeClass('show active');
+        $('#settingsPanel').removeClass('show active');
+
+        // Hide Save button in footer
+        $('#btnSaveAlarmSettings').hide();
+
+        // Load history (first page)
+        loadAlarmHistory();
+    };
+
+    // ========================================
+    // Function: Switch to Settings Tab
+    // ========================================
+    window.switchToSettingsTab = function() {
+
+        // Manual tab switching
+        $('#settingsTab').addClass('active');
+        $('#activeAlarmsTab').removeClass('active');
+        $('#historyTab').removeClass('active');
+
+        $('#settingsPanel').addClass('show active');
+        $('#activeAlarmsPanel').removeClass('show active');
+        $('#historyPanel').removeClass('show active');
+
+        // Show Save button in footer
+        $('#btnSaveAlarmSettings').show();
+
+        // ? Load tanks with recent ROT tickets
+        loadTanksWithRecentROT();
+    };
+
+    // ========================================
+    // Function: Load Active Alarms
+    // ========================================
+    window.loadActiveAlarms = function() {
+
+        $.ajax({
+            url: '/TankMovements/GetActiveAlarmsWithDetails',
+            type: 'GET',
+            success: function(response) {
+                if (response.isValid) {
+                    renderAlarmCards(response.data, response.count);
+                } else {
+                    console.error('[loadActiveAlarms] Error:', response.message);
+                    $('#activeAlarmsContainer').html('<div class="alert alert-danger">Error loading alarms: ' + response.message + '</div>');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[loadActiveAlarms] AJAX Error:', error);
+                $('#activeAlarmsContainer').html('<div class="alert alert-danger">Error loading alarms: ' + error + '</div>');
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Refresh Active Alarms (silent, no loading spinner)
+    // ========================================
+    window.refreshActiveAlarms = function() {
+        $.ajax({
+            url: '/TankMovements/GetActiveAlarmsWithDetails',
+            type: 'GET',
+            success: function(response) {
+                if (response.isValid) {
+                    renderAlarmCards(response.data, response.count);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[refreshActiveAlarms] AJAX Error:', error);
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Render Alarm Cards (with color coding & sorting)
+    // ========================================
+    window.renderAlarmCards = function(tanks, count) {
+
+        // Update badge count (total tanks)
+        $('#alarmBadge').text(count);
+
+        if (count === 0) {
+            // No active monitoring
+            $('#activeAlarmsContainer').html(
+                '<div class="alert alert-success text-center">' +
+                '<i class="fas fa-check-circle fa-3x mb-3"></i>' +
+                '<h5>No Active Monitoring</h5>' +
+                '<p class="mb-0">No tanks are currently being monitored</p>' +
+                '</div>'
+            );
+            $('#activeAlarmsActions').hide();
+            return;
+        }
+
+        // ? SORTING: Alarm tanks (red) di atas, Normal tanks (green) di bawah
+        var alarmTanks = tanks.filter(function(t) { return t.stagnantAlarm === true; });
+        var normalTanks = tanks.filter(function(t) { return t.stagnantAlarm === false; });
+
+        // Show action buttons (only if there are alarms)
+        if (alarmTanks.length > 0) {
+            $('#activeAlarmsActions').show();
+        } else {
+            $('#activeAlarmsActions').hide();
+        }
+
+        var html = '';
+
+        // ? Section 1: ALARM TANKS (Red cards)
+        if (alarmTanks.length > 0) {
+            html += '<div class="mb-3">';
+            html += '<h6 class="text-danger"><i class="fas fa-exclamation-circle"></i> ALARMS - ' + alarmTanks.length + ' tank(s)</h6>';
+            html += '</div>';
+
+            alarmTanks.forEach(function(tank) {
+                html += '<div class="card border-danger mb-3" data-tank="' + tank.tankNumber + '" data-duration-seconds="' + tank.durationSeconds + '" data-alarm="true">';
+                html += '<div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">';
+                html += '<span><i class="fas fa-exclamation-triangle"></i> <strong>Tank: ' + tank.tankNumber + '</strong></span>';
+                html += '<span class="badge badge-light text-danger">STAGNANT</span>';
+                html += '</div>';
+                html += '<div class="card-body">';
+                html += '<div class="row">';
+                html += '<div class="col-md-6">';
+                html += '<p class="mb-1"><strong>Duration:</strong> <span class="alarm-duration text-danger">' + tank.durationDisplay + '</span></p>';
+                html += '<p class="mb-1"><strong>Flowrate:</strong> ' + (tank.flowrate || 0).toFixed(2) + ' m³/h</p>';
+                html += '<p class="mb-1"><strong>Last Change:</strong> ' + (tank.lastFlowrateChangeTime ? moment(tank.lastFlowrateChangeTime).format('DD MMM YYYY HH:mm') : 'N/A') + '</p>';
+                html += '</div>';
+                html += '<div class="col-md-6">';
+                html += '<p class="mb-1"><strong>Threshold:</strong> ' + tank.stagnantThresholdMinutes + ' minutes</p>';
+                html += '<p class="mb-1"><strong>Current Level:</strong> ' + (tank.currentLevel || 'N/A') + ' mm</p>';
+                html += '<p class="mb-1"><strong>Target Level:</strong> ' + (tank.targetLevel || 'N/A') + ' mm</p>';
+                html += '</div>';
+                html += '</div>';
+                html += '<hr />';
+                html += '<div class="text-right">';
+                html += '<button class="btn btn-success btn-sm" onclick="ackIndividualAlarm(\'' + tank.tankNumber + '\')">';
+                html += '<i class="fas fa-check"></i> ACK</button> ';
+                html += '<button class="btn btn-secondary btn-sm" onclick="jumpToSettings(\'' + tank.tankNumber + '\')">';
+                html += '<i class="fas fa-cog"></i> Settings</button> ';
+                html += '<button class="btn btn-danger btn-sm" onclick="stopMonitoring(\'' + tank.tankNumber + '\')">';
+                html += '<i class="fas fa-stop"></i> Stop</button>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+        }
+
+        // ? Section 2: NORMAL TANKS (Green cards)
+        if (normalTanks.length > 0) {
+            html += '<div class="mb-3 mt-4">';
+            html += '<h6 class="text-success"><i class="fas fa-check-circle"></i> MONITORING - ' + normalTanks.length + ' tank(s)</h6>';
+            html += '</div>';
+
+            normalTanks.forEach(function(tank) {
+                html += '<div class="card border-success mb-3" data-tank="' + tank.tankNumber + '" data-duration-seconds="' + tank.durationSeconds + '" data-alarm="false">';
+                html += '<div class="card-header bg-success text-white d-flex justify-content-between align-items-center">';
+                html += '<span><i class="fas fa-check"></i> <strong>Tank: ' + tank.tankNumber + '</strong></span>';
+                html += '<span class="badge badge-light text-success">NORMAL</span>';
+                html += '</div>';
+                html += '<div class="card-body">';
+                html += '<div class="row">';
+                html += '<div class="col-md-6">';
+                html += '<p class="mb-1"><strong>Duration:</strong> <span class="alarm-duration text-success">' + tank.durationDisplay + '</span></p>';
+                html += '<p class="mb-1"><strong>Flowrate:</strong> <span class="text-success">' + (tank.flowrate || 0).toFixed(2) + ' m³/h</span></p>';
+                html += '<p class="mb-1"><strong>Last Change:</strong> ' + (tank.lastFlowrateChangeTime ? moment(tank.lastFlowrateChangeTime).format('DD MMM YYYY HH:mm') : 'N/A') + '</p>';
+                html += '</div>';
+                html += '<div class="col-md-6">';
+                html += '<p class="mb-1"><strong>Threshold:</strong> ' + tank.stagnantThresholdMinutes + ' minutes</p>';
+                html += '<p class="mb-1"><strong>Current Level:</strong> ' + (tank.currentLevel || 'N/A') + ' mm</p>';
+                html += '<p class="mb-1"><strong>Target Level:</strong> ' + (tank.targetLevel || 'N/A') + ' mm</p>';
+                html += '</div>';
+                html += '</div>';
+                html += '<hr />';
+                html += '<div class="text-right">';
+                html += '<button class="btn btn-secondary btn-sm" onclick="jumpToSettings(\'' + tank.tankNumber + '\')">';
+                html += '<i class="fas fa-cog"></i> Settings</button> ';
+                html += '<button class="btn btn-warning btn-sm" onclick="stopMonitoring(\'' + tank.tankNumber + '\')">';
+                html += '<i class="fas fa-stop"></i> Stop Monitoring</button>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+        }
+
+        $('#activeAlarmsContainer').html(html);
+
+        // Start live timer countdown
+        updateAlarmTimers();
+    };
+
+    // ========================================
+    // Function: Update Alarm Timers (Live Countdown)
+    // ========================================
+    window.updateAlarmTimers = function() {
+        $('.card[data-tank]').each(function() {
+            var card = $(this);
+            var durationSeconds = parseInt(card.attr('data-duration-seconds'));
+
+            // Increment duration by 1 second
+            durationSeconds++;
+            card.attr('data-duration-seconds', durationSeconds);
+
+            // Format duration
+            var days = Math.floor(durationSeconds / 86400);
+            var hours = Math.floor((durationSeconds % 86400) / 3600);
+            var minutes = Math.floor((durationSeconds % 3600) / 60);
+            var seconds = durationSeconds % 60;
+
+            var durationDisplay = '';
+            if (days > 0) {
+                durationDisplay = days + 'd ' + hours + 'h ' + minutes + 'm';
+            } else if (hours > 0) {
+                durationDisplay = hours + 'h ' + minutes + 'm ' + seconds + 's';
+            } else {
+                durationDisplay = minutes + 'm ' + seconds + 's';
+            }
+
+            // Update display
+            card.find('.alarm-duration').text(durationDisplay);
+        });
+
+        // Run again after 1 second
+        setTimeout(updateAlarmTimers, 1000);
+    };
+
+    // ========================================
+    // Function: ACK Individual Alarm
+    // ========================================
+    window.ackIndividualAlarm = function(tankNumber) {
+
+        $.ajax({
+            url: '/TankMovements/AckIndividualAlarm',
+            type: 'POST',
+            data: { tankNumber: tankNumber },
+            success: function(response) {
+                if (response.isValid) {
+                    // Refresh alarms immediately
+                    loadActiveAlarms();
+                } else {
+                    alert('Error acknowledging alarm: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[ackIndividualAlarm] AJAX Error:', error);
+                alert('Error acknowledging alarm: ' + error);
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Bulk ACK All Alarms
+    // ========================================
+    window.bulkAckAllAlarms = function() {
+
+        $.ajax({
+            url: '/TankMovements/AckTankMovementAlarm',
+            type: 'POST',
+            success: function(response) {
+                if (response.isValid) {
+                    // Refresh alarms immediately
+                    loadActiveAlarms();
+                } else {
+                    alert('Error acknowledging alarms: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[bulkAckAllAlarms] AJAX Error:', error);
+                alert('Error acknowledging alarms: ' + error);
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Jump to Settings Tab for specific tank
+    // ========================================
+    window.jumpToSettings = function(tankNumber) {
+
+        // Switch to settings tab
+        switchToSettingsTab();
+
+        // Select tank in dropdown
+        $('#alarmTankSelect').val(tankNumber);
+
+        // Load settings
+        loadTankMovementSettings();
+    };
+
+    // ========================================
+    // Function: Stop Monitoring (Deactivate tank monitoring)
+    // ========================================
+    window.stopMonitoring = function(tankNumber) {
+
+        // Confirmation dialog
+        if (!confirm('Are you sure you want to stop monitoring ' + tankNumber + '?\n\nThis will:\n- Stop alarm monitoring\n- Deactivate stagnant detection\n- Remove tank from monitoring list')) {
+            return;
+        }
+
+        $.ajax({
+            url: '/TankMovements/DeactivateMonitoring',
+            type: 'POST',
+            data: { tankNumber: tankNumber },
+            success: function(response) {
+                if (response.isValid) {
+                    alert('Monitoring stopped for ' + tankNumber);
+                    // Refresh alarms immediately
+                    loadActiveAlarms();
+                } else {
+                    alert('Error stopping monitoring: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[stopMonitoring] AJAX Error:', error);
+                alert('Error stopping monitoring: ' + error);
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Load Tanks with Recent ROT Tickets (for dropdown)
+    // ========================================
+    window.loadTanksWithRecentROT = function() {
+
+        var select = $('#alarmTankSelect');
+        select.html('<option value="">-- Loading... --</option>');
+        select.prop('disabled', true);
+        $('#selectedTicketInfo').text('');
+        $('#selectedAlarmTicketId').val('');
+
+        $.ajax({
+            url: '/TankMovements/GetTanksWithRecentROT',
+            type: 'GET',
+            data: { days: 3 },
+            success: function(response) {
+                select.prop('disabled', false);
+
+                if (response.isValid && response.data && response.count > 0) {
+                    var html = '<option value="">-- Select Tank (' + response.count + ' available) --</option>';
+
+                    response.data.forEach(function(tank) {
+                        html += '<option value="' + tank.tankNumber + '" data-ticket-id="' + tank.ticketId + '" data-ticket-no="' + tank.ticketNumber + '">';
+                        html += tank.tankNumber + ' - ' + tank.ticketNumber;
+                        html += '</option>';
+                    });
+
+                    select.html(html);
+                } else {
+                    select.html('<option value="">-- No ROT OPEN tickets in last 3 days --</option>');
+                }
+            },
+            error: function(xhr, status, error) {
+                select.prop('disabled', false);
+                select.html('<option value="">-- Error loading tanks --</option>');
+                console.error('[loadTanksWithRecentROT] Error:', error);
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Handle Tank Selection (store ticketId)
+    // ========================================
+    window.onAlarmTankSelected = function() {
+        var select = $('#alarmTankSelect');
+        var selectedOption = select.find('option:selected');
+        var tankName = select.val();
+
+        if (!tankName) {
+            $('#selectedTicketInfo').text('');
+            $('#selectedAlarmTicketId').val('');
+            $('#settingsFormGroup').hide();
+            pendingTankTicketId = null;
+            return;
+        }
+
+        // Get ticketId from selected option
+        var ticketId = selectedOption.data('ticket-id');
+        var ticketNo = selectedOption.data('ticket-no');
+
+        // Store ticketId for use when saving
+        $('#selectedAlarmTicketId').val(ticketId || '');
+        pendingTankTicketId = ticketId || null;
+
+        // Show ticket info
+        if (ticketNo) {
+            $('#selectedTicketInfo').html('<i class="fas fa-ticket-alt text-success"></i> Ticket: <strong>' + ticketNo + '</strong> (ID: ' + ticketId + ')');
+        } else {
+            $('#selectedTicketInfo').text('');
+        }
+
+        // Load settings for this tank
+        loadTankMovementSettings();
+    };
+
+    // ========================================
+    // Function: Load Tank Movement Settings
+    // ========================================
+    window.loadTankMovementSettings = function() {
+        var tankName = $('#alarmTankSelect').val();
+
+        if (!tankName) {
+            $('#settingsFormGroup').hide();
+            return;
+        }
+
+        // Show loading
+        $('#settingsFormGroup').show();
+        $('#currentSettingsInfo').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Loading settings...');
+
+        // Get current Tank Movement settings
+        $.ajax({
+            url: '/TankMovements/GetSettings',
+            type: 'GET',
+            data: { tankName: tankName },
+            success: function (response) {
+                if (response.isValid && response.data) {
+                    var data = response.data;
+
+                    // Populate form
+                    $('#targetLevel').val(data.targetLevel || '');
+                    $('#stagnantThreshold').val(data.stagnantThresholdMinutes || 5);
+                    $('#isManuallyConfigured').prop('checked', data.isManuallyConfigured || false);
+
+                    // Show current status
+                    var statusHtml = '<div class="alert alert-' + (data.status ? 'success' : 'secondary') + '">';
+                    statusHtml += '<strong>Current Status:</strong> ' + (data.status ? '? Active' : '?? Inactive');
+                    if (data.stagnantAlarm) {
+                        statusHtml += ' | <span class="text-danger"><strong>?? STAGNANT ALARM ACTIVE!</strong></span>';
+                    }
+                    if (data.lastFlowrateChangeTime) {
+                        statusHtml += '<br /><small>Last Flowrate Change: ' + moment(data.lastFlowrateChangeTime).format('DD MMM YYYY HH:mm') + '</small>';
+                    }
+                    statusHtml += '</div>';
+
+                    // ? Add "Stop Monitoring" button if Status = Active
+                    if (data.status) {
+                        statusHtml += '<div class="alert alert-warning">';
+                        statusHtml += '<i class="fas fa-info-circle"></i> <strong>Monitoring Active</strong><br />';
+                        statusHtml += '<small>Click the button below to stop monitoring and deactivate alarm for this tank.</small><br />';
+                        statusHtml += '<button class="btn btn-danger btn-sm mt-2" onclick="stopMonitoring(\'' + tankName + '\')">';
+                        statusHtml += '<i class="fas fa-stop"></i> Stop Monitoring</button>';
+                        statusHtml += '</div>';
+                    }
+
+                    $('#currentSettingsInfo').html(statusHtml);
+                } else {
+                    // No Tank_Movement record yet
+                    $('#targetLevel').val('');
+                    $('#stagnantThreshold').val(5);
+                    $('#isManuallyConfigured').prop('checked', true);
+
+                    $('#currentSettingsInfo').html('<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> No Tank Movement record found for this tank. Settings will be created when you save.</div>');
+                }
+            },
+            error: function (xhr, status, error) {
+                $('#currentSettingsInfo').html('<div class="alert alert-danger">Error loading settings: ' + error + '</div>');
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Save Alarm Settings
+    // ========================================
+    window.saveAlarmSettings = function() {
+        var tankName = $('#alarmTankSelect').val();
+
+        if (!tankName) {
+            alert('Please select a tank');
+            return;
+        }
+
+        var targetLevel = $('#targetLevel').val() ? parseInt($('#targetLevel').val()) : null;
+        var stagnantThresholdMinutes = $('#stagnantThreshold').val() ? parseInt($('#stagnantThreshold').val()) : 5;
+        var isManuallyConfigured = $('#isManuallyConfigured').is(':checked');
+
+        // ? Get ticketId from hidden field (set by onAlarmTankSelected) or fallback to pendingTankTicketId
+        var ticketId = $('#selectedAlarmTicketId').val() || pendingTankTicketId || null;
+
+        // Disable button
+        var btnSave = $('#btnSaveAlarmSettings');
+        btnSave.prop('disabled', true);
+        btnSave.html('<span class="spinner-border spinner-border-sm"></span> Saving...');
+
+        $.ajax({
+            url: '/TankMovements/UpdateSettings',
+            type: 'POST',
+            data: {
+                tankName: tankName,
+                targetLevel: targetLevel,
+                stagnantThresholdMinutes: stagnantThresholdMinutes,
+                isManuallyConfigured: isManuallyConfigured,
+                tankTicketId: ticketId  // ? Include tankTicketId from selected ROT ticket
+            },
+            success: function (response) {
+                btnSave.prop('disabled', false);
+                btnSave.html('<i class="fas fa-save"></i> Save Settings');
+
+                if (response.isValid) {
+                    alert('? Alarm settings saved successfully!');
+                    // ? Clear pending ticketId after save
+                    pendingTankTicketId = null;
+                    $('#selectedAlarmTicketId').val('');
+                    // ? FIX: Use custom close function
+                    closeAlarmSettingsModal();
+
+                    // Reload Tank Movement list if on that page
+                    if (typeof oTable !== 'undefined' && oTable && oTable.ajax) {
+                        oTable.ajax.reload(null, false);
+                    }
+                } else {
+                    alert('? Error: ' + (response.message || 'Failed to save settings'));
+                }
+            },
+            error: function (xhr, status, error) {
+                btnSave.prop('disabled', false);
+                btnSave.html('<i class="fas fa-save"></i> Save Settings');
+                alert('Error: ' + error);
+            }
+        });
+    };
+
+    // ========================================
+    // ? REMOVED: Duplicate showTankMovementThresholdModal function
+    // The correct showTankMovementThresholdModal is defined at line 646
+    // which opens #tankMovementThresholdModal instead of #alarmSettingsModal
+    // ========================================
+    // ? Keep pendingTankTicketId for saveAlarmSettings (used by #alarmSettingsModal)
+    var pendingTankTicketId = null;
+
+    // ========================================
+    // HISTORY TAB FUNCTIONS
+    // ========================================
+
+    // Global variables for history lazy loading
+    var historyCurrentPage = 1;
+    var historyPageSize = 10;
+    var historyHasMore = true;
+    var historyLoading = false;
+    var historyData = []; // Store all loaded history records
+
+    // ========================================
+    // Function: Load Alarm History (with lazy loading)
+    // ========================================
+    window.loadAlarmHistory = function(reset = true) {
+        if (reset) {
+            historyCurrentPage = 1;
+            historyData = [];
+            historyHasMore = true;
+            $('#historyContainer').html('');
+            $('#selectAllHistory').prop('checked', false);
+        }
+
+        if (!historyHasMore || historyLoading) {
+            return;
+        }
+
+        historyLoading = true;
+        $('#historyLoader').show();
+
+        $.ajax({
+            url: '/TankMovements/GetAlarmHistory',
+            type: 'GET',
+            data: { page: historyCurrentPage, pageSize: historyPageSize },
+            success: function(response) {
+                if (response.isValid) {
+                    console.log('[loadAlarmHistory] Received ' + response.data.length + ' records (total: ' + response.totalCount + ')');
+
+                    // Append data
+                    historyData = historyData.concat(response.data);
+                    historyHasMore = response.hasMore;
+                    historyCurrentPage++;
+
+                    // Render cards
+                    renderHistoryCards(response.data, false); // append mode
+
+                    // Show/hide UI elements
+                    if (historyData.length > 0) {
+                        $('#historyBulkActions').show();
+                    }
+
+                    if (!historyHasMore) {
+                        $('#historyLoader').hide();
+                        $('#historyEndMessage').show();
+                    }
+                } else {
+                    $('#historyContainer').html('<div class="alert alert-danger">Error loading history: ' + response.message + '</div>');
+                }
+
+                historyLoading = false;
+                $('#historyLoader').hide();
+            },
+            error: function(xhr, status, error) {
+                console.error('[loadAlarmHistory] AJAX Error:', error);
+                $('#historyContainer').html('<div class="alert alert-danger">Error loading history: ' + error + '</div>');
+                historyLoading = false;
+                $('#historyLoader').hide();
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Render History Cards
+    // ========================================
+    window.renderHistoryCards = function(records, clearFirst = true) {
+
+        if (clearFirst) {
+            $('#historyContainer').html('');
+        }
+
+        if (historyData.length === 0 && records.length === 0) {
+            $('#historyContainer').html(
+                '<div class="alert alert-secondary text-center">' +
+                '<i class="fas fa-inbox fa-3x mb-3"></i>' +
+                '<h5>No History Records</h5>' +
+                '<p class="mb-0">No stopped monitoring records found</p>' +
+                '</div>'
+            );
+            $('#historyBulkActions').hide();
+            return;
+        }
+
+        var html = '';
+
+        records.forEach(function(record) {
+            html += '<div class="card border-secondary mb-3" id="history-card-' + record.id + '" data-id="' + record.id + '">';
+            html += '<div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">';
+            html += '<div>';
+            html += '<input type="checkbox" class="history-checkbox mr-2" data-id="' + record.id + '" onchange="updateSelectedCount()">';
+            html += '<strong>Tank: ' + record.tankNumber + '</strong>';
+            html += '</div>';
+            html += '<span class="badge badge-light text-secondary">STOPPED</span>';
+            html += '</div>';
+            html += '<div class="card-body">';
+            html += '<div class="row">';
+            html += '<div class="col-md-6">';
+            html += '<p class="mb-1"><strong>Stopped At:</strong> ' + (record.timestamp ? moment(record.timestamp).format('DD MMM YYYY HH:mm') : 'N/A') + '</p>';
+            html += '<p class="mb-1"><strong>Last Flowrate Change:</strong> ' + (record.lastFlowrateChangeTime ? moment(record.lastFlowrateChangeTime).format('DD MMM YYYY HH:mm') : 'N/A') + '</p>';
+            html += '</div>';
+            html += '<div class="col-md-6">';
+            html += '<div class="form-group mb-1">';
+            html += '<label class="mb-0"><strong>Target Level (mm):</strong></label>';
+            html += '<input type="number" class="form-control form-control-sm edit-target-level" data-id="' + record.id + '" value="' + (record.targetLevel || '') + '" disabled />';
+            html += '</div>';
+            html += '<div class="form-group mb-1">';
+            html += '<label class="mb-0"><strong>Threshold (min):</strong></label>';
+            html += '<input type="number" class="form-control form-control-sm edit-threshold" data-id="' + record.id + '" value="' + (record.stagnantThresholdMinutes || 5) + '" disabled />';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '<hr />';
+            html += '<div class="text-right">';
+            html += '<button class="btn btn-warning btn-sm btn-edit" data-id="' + record.id + '" onclick="editHistoryCard(' + record.id + ')">';
+            html += '<i class="fas fa-edit"></i> Edit</button> ';
+            html += '<button class="btn btn-danger btn-sm btn-delete" data-id="' + record.id + '" onclick="deleteHistoryCard(' + record.id + ')">';
+            html += '<i class="fas fa-trash"></i> Delete</button>';
+            html += '<button class="btn btn-success btn-sm btn-save" data-id="' + record.id + '" onclick="saveHistoryCard(' + record.id + ')" style="display: none;">';
+            html += '<i class="fas fa-save"></i> Save</button>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+        });
+
+        $('#historyContainer').append(html);
+
+        // Setup infinite scroll if needed
+        setupInfiniteScroll();
+    };
+
+    // ========================================
+    // Function: Setup Infinite Scroll
+    // ========================================
+    window.setupInfiniteScroll = function() {
+        // Remove previous scroll handler
+        $('#historyPanel').off('scroll');
+
+        // Add scroll handler
+        $('#historyPanel').on('scroll', function() {
+            if (!historyHasMore || historyLoading) {
+                return;
+            }
+
+            var scrollTop = $(this).scrollTop();
+            var scrollHeight = $(this)[0].scrollHeight;
+            var clientHeight = $(this).height();
+
+            // Check if scrolled to bottom (with 50px threshold)
+            if (scrollTop + clientHeight >= scrollHeight - 50) {
+                loadAlarmHistory(false); // append mode
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Edit History Card
+    // ========================================
+    window.editHistoryCard = function(id) {
+
+        var card = $('#history-card-' + id);
+
+        // Enable input fields
+        card.find('.edit-target-level').prop('disabled', false);
+        card.find('.edit-threshold').prop('disabled', false);
+
+        // Toggle buttons
+        card.find('.btn-edit').hide();
+        card.find('.btn-delete').hide();
+        card.find('.btn-save').show();
+    };
+
+    // ========================================
+    // Function: Save History Card
+    // ========================================
+    window.saveHistoryCard = function(id) {
+
+        var card = $('#history-card-' + id);
+
+        var targetLevel = parseInt(card.find('.edit-target-level').val()) || null;
+        var threshold = parseInt(card.find('.edit-threshold').val()) || 5;
+
+        $.ajax({
+            url: '/TankMovements/UpdateHistory',
+            type: 'POST',
+            data: {
+                id: id,
+                targetLevel: targetLevel,
+                stagnantThresholdMinutes: threshold
+            },
+            success: function(response) {
+                if (response.isValid) {
+                    alert('Record updated successfully');
+
+                    // Disable input fields
+                    card.find('.edit-target-level').prop('disabled', true);
+                    card.find('.edit-threshold').prop('disabled', true);
+
+                    // Toggle buttons back
+                    card.find('.btn-save').hide();
+                    card.find('.btn-edit').show();
+                    card.find('.btn-delete').show();
+                } else {
+                    alert('Error updating record: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[saveHistoryCard] AJAX Error:', error);
+                alert('Error updating record: ' + error);
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Delete History Card
+    // ========================================
+    window.deleteHistoryCard = function(id) {
+        if (!confirm('Are you sure you want to delete this history record?')) {
+            return;
+        }
+
+        $.ajax({
+            url: '/TankMovements/DeleteHistory',
+            type: 'POST',
+            data: { id: id },
+            success: function(response) {
+                if (response.isValid) {
+                    // Remove card from DOM
+                    $('#history-card-' + id).fadeOut(300, function() {
+                        $(this).remove();
+                        // Update selected count
+                        updateSelectedCount();
+                    });
+                } else {
+                    alert('Error deleting record: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[deleteHistoryCard] AJAX Error:', error);
+                alert('Error deleting record: ' + error);
+            }
+        });
+    };
+
+    // ========================================
+    // Function: Toggle Select All History
+    // ========================================
+    window.toggleSelectAllHistory = function() {
+        var isChecked = $('#selectAllHistory').is(':checked');
+        $('.history-checkbox').prop('checked', isChecked);
+        updateSelectedCount();
+    };
+
+    // ========================================
+    // Function: Update Selected Count
+    // ========================================
+    window.updateSelectedCount = function() {
+        var selectedCount = $('.history-checkbox:checked').length;
+        $('#selectedCount').text(selectedCount);
+        $('#btnBulkDelete').prop('disabled', selectedCount === 0);
+    };
+
+    // ========================================
+    // Function: Bulk Delete History
+    // ========================================
+    window.bulkDeleteHistory = function() {
+        var selectedIds = [];
+        $('.history-checkbox:checked').each(function() {
+            selectedIds.push(parseInt($(this).attr('data-id')));
+        });
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one record to delete');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to delete ' + selectedIds.length + ' selected record(s)?')) {
+            return;
+        }
+
+        $.ajax({
+            url: '/TankMovements/BulkDeleteHistory',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(selectedIds),
+            success: function(response) {
+                if (response.isValid) {
+                    alert(response.message);
+
+                    // Remove cards from DOM
+                    selectedIds.forEach(function(id) {
+                        $('#history-card-' + id).fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    });
+
+                    // Reset checkbox
+                    $('#selectAllHistory').prop('checked', false);
+                    updateSelectedCount();
+                } else {
+                    alert('Error deleting records: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[bulkDeleteHistory] AJAX Error:', error);
+                alert('Error deleting records: ' + error);
+            }
+        });
+    };
+</script>
+

@@ -1,0 +1,413 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>TMS.Web</name>
+    </assembly>
+    <members>
+        <member name="T:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPORequest">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPORequest.PONumber">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPORequest.Material">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPORequest.Plant">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPORequest.Quantity">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPORequest.UoM">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPORequest.PlannedGIDate">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPORequest.RefSystem">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPORequest.ReceivingPlant">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPOResponse">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPOResponse.Message">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPOResponse.Response">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPOResponseMessage">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPOResponseMessage.Desc">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPOResponseMessage.Type">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPOResponseMessage.Code">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPOResponseResponse">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.CreateDOFromPO.dt_CreateDOFromPOResponseResponse.DeliveryNumber">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetCustomer.dt_getCustomerRequest">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerRequest.Ship_to_Code">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerRequest.Sales_Organization">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerRequest.Distribution_Channel">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetCustomer.dt_getCustomerResponse">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponse.Details">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponse.Message">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails.Sold_to_code">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails.Sold_to_description">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails.Ship_to_Code">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails.Ship_to_Description">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails.Ship_to_Address">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails.Depot">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails.Desc_Depot">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails.Customer_Group">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseDetails.Name2">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetCustomer.dt_getCustomerResponseMessage">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseMessage.Type">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseMessage.Code">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetCustomer.dt_getCustomerResponseMessage.Desc_Msg">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetDetailPO.dt_getDetailPoRequest">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoRequest.PO_Number">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoRequest.Document_Date">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoRequest.Supplying_Plant">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoRequest.Type">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetDetailPO.dt_getDetailPoResponse">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponse.ResponseHeader">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponse.ResponseMaterial">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponse.ResponsePurchaseOrderHistory">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponse.ResponseMessage">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader.PO_Number">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader.Purch_Org">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader.Purch_Group">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader.Company_Code">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader.Type">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader.Header_Text">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader.Header_Note">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader.Vendor">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseHeader.Document_Date">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMaterial">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMaterial.Item">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMaterial.Material">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMaterial.Short_Text">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMaterial.PO_Quantity">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMaterial.PO_Uom">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMaterial.Delivery_Date">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMaterial.Plant">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMaterial.Storage_Location">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponsePurchaseOrderHistory">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponsePurchaseOrderHistory.Item">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponsePurchaseOrderHistory.Material_Document">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponsePurchaseOrderHistory.Posting_Date">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponsePurchaseOrderHistory.Quantity">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponsePurchaseOrderHistory.Uom">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMessage">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMessage.Desc">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMessage.Type">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetDetailPO.dt_getDetailPoResponseResponseMessage.Code">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetListPO.dt_getListPoRequest">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoRequest.Document_Date_From">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoRequest.Document_Date_To">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoRequest.Supplying_Plant">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoRequest.Type">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetListPO.dt_getListPoResponse">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponse.ResponseList">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponse.ResponseMessage">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetListPO.dt_getListPoResponseResponseList">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponseResponseList.PO_Number">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponseResponseList.Document_Date">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponseResponseList.Create_Date">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponseResponseList.Supplying_Plant">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponseResponseList.Type">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetListPO.dt_getListPoResponseResponseMessage">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponseResponseMessage.Desc">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponseResponseMessage.Type">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetListPO.dt_getListPoResponseResponseMessage.Code">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetTransporter.dt_getTransporterRequest">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterRequest.Transporter">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetTransporter.dt_getTransporterResponse">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponse.TransporterDetails">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponse.Message">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetTransporter.dt_getTransporterResponseTransporterDetails">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponseTransporterDetails.Transporter_Code">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponseTransporterDetails.Transporter_Name">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponseTransporterDetails.Transporter_Address">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponseTransporterDetails.Transporter_City">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponseTransporterDetails.Postal_Code">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.GetTransporter.dt_getTransporterResponseMessage">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponseMessage.Type">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponseMessage.Code">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.GetTransporter.dt_getTransporterResponseMessage.Desc_Msg">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDOResponseMessage">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDOResponseMessage.Desc">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDOResponseMessage.Type">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDOResponseMessage.Code">
+            <remarks/>
+        </member>
+        <member name="T:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.DeliveryNumber">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.ForwardingAgent">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.Plant">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.StorageLocation">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.VehicleNumber">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.DriverName">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.DocumentDate">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.ShipmentDate">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.ShipmentTime">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.QuantityMTO">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.QuantityBB6">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.QuantityLT">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.QuantityLiter">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.QuantityL15">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.Density">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.Temperature">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.SPPK">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.SPA">
+            <remarks/>
+        </member>
+        <member name="P:CSL.SAP.PostGoodIssueDO.dt_PostGoodIssueDORequest.RefSystem">
+            <remarks/>
+        </member>
+    </members>
+</doc>

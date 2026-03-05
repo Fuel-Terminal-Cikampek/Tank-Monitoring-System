@@ -1,0 +1,124 @@
+﻿@model TMS.Models.TankTicket
+
+@{
+    ViewData["Title"] = "AddOrEdit";
+    Layout = null;
+}
+<script>
+    var dateAndTime;
+
+    // Custom filtering function which will search data in column four between two values
+    // ✅ SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+    jQuery(document).ready(function ($) {
+        // Create date inputs
+        dateAndTime = new DateTime($('#date-time'), {
+            format: 'D MMM YYYY HH:mm'
+        });
+    });
+    //get data Tank by Id
+    function loadData() {
+        var id = document.getElementById("Tank_Id").value;
+        var Method = document.getElementById("Measurement_Method").value;
+        var timerequest = document.getElementById("date-time").value;
+        if (id != 0) {
+            GetData(id, Method, timerequest);
+        }
+    }
+</script>
+<form asp-action="AddOrEdit" asp-route-id="@Model.Id" onsubmit="return jQueryAjaxPost(this);" autocomplete="off" style="font-size:1.5rem">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="Ticket_Number"/>
+    <div class="form-group">
+        <label asp-for="Tank_Id" class="control-label"></label>
+        <select onchange="loadData()" asp-for="Tank_Id" class="custom-select" asp-items=@(new SelectList(ViewBag.TankId,"Tank_Name","Tank_Name"))></select>
+        <span asp-validation-for="Tank_Id" class="text-danger"></span>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Operation_Type" class="control-label"></label>
+            <select asp-for="Operation_Type" class="custom-select" asp-items=@(new SelectList(ViewBag.ticketTypes,"Operation","Description"))>
+            </select>
+            <span asp-validation-for="Operation_Type" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="Operation_Status" class="control-label"></label>
+            <select asp-for="Operation_Status" class="custom-select">
+                <option selected>Choose...</option>
+                <option value=1>Open</option>
+                <option value=2>Close</option>
+            </select>
+            <span asp-validation-for="Operation_Status" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Measurement_Method" class="control-label">Method</label>
+            <select onchange="loadData();" asp-for="Measurement_Method" class="custom-select">
+                <option selected>Choose...</option>
+                <option value="Automatic">Automatic</option>
+                <option value="Manual">Manual</option>
+            </select>
+            <span asp-validation-for="Measurement_Method" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Timestamp" class="control-label"></label>
+            <input onchange="loadData();" asp-for="Timestamp" type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="date-time" />
+            <span asp-validation-for="Timestamp" class="text-danger"></span>
+        </div>
+        </div>
+        <hr />
+        @*value tank ticket*@
+        <div class="form-group row">
+            <div class="col-sm-6 mb-3 mb-sm-9">
+                <label asp-for="Do_Number" class="control-label"></label>
+                <input asp-for="Do_Number" class="form-control" />
+                <span asp-validation-for="Do_Number" class="text-danger"></span>
+            </div>
+            <div class="col-sm-6 mb-sm-0">
+                <label asp-for="Shipment_Id" class="control-label"></label>
+                <input asp-for="Shipment_Id" class="form-control" />
+                <span asp-validation-for="Shipment_Id" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-6 mb-3 mb-sm-0">
+                <label asp-for="LiquidLevel" class="control-label"></label>
+                <input id="level" asp-for="LiquidLevel" class="form-control" />
+                <span asp-validation-for="LiquidLevel" class="text-danger"></span>
+            </div>
+            <div class="col-sm-6 mb-sm-0">
+                <label asp-for="WaterLevel" class="control-label"></label>
+                <input id="water" asp-for="WaterLevel" class="form-control" />
+                <span asp-validation-for="WaterLevel" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-6 mb-3 mb-sm-0">
+                <label asp-for="LiquidTemperature" class="control-label"></label>
+                <input id="temperature" asp-for="LiquidTemperature" class="form-control" />
+                <span asp-validation-for="LiquidTemperature" class="text-danger"></span>
+            </div>
+            <div class="col-sm-6 mb-sm-0">
+                <label asp-for="TestTemperature" class="control-label"></label>
+                <input id="testTemperature" asp-for="TestTemperature" class="form-control" />
+                <span asp-validation-for="TestTemperature" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="LiquidDensity" class="control-label"></label>
+            <input id="density" asp-for="LiquidDensity" class="form-control" />
+            <span asp-validation-for="LiquidDensity" class="text-danger"></span>
+        </div>
+
+        <div class="form-group col text-center">
+            <button type="submit" class="btn btn-success">Save changes</button>
+        </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

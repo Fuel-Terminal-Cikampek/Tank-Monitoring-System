@@ -1,0 +1,102 @@
+﻿@model TMS.Models.Tank
+
+@{
+    ViewData["Title"] = "AddOrEdit";
+    Layout = null;
+}
+<script>
+    var dateAndTime;
+
+    // Custom filtering function which will search data in column four between two values
+    // ✅ SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+    jQuery(document).ready(function ($) {
+        // Create date inputs
+        dateAndTime = new DateTime($('#time-counter'), {
+            format: 'HH:mm:ss'
+        });
+    });
+   
+</script>
+<div class="row">
+    <div class="col-md-12">
+        <form asp-action="Config" asp-route-id="@Model.TankId" onsubmit="return jQueryAjaxPost(this);" autocomplete="off">
+            <div id="content-form">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="TankId" />
+                <div class="form-group">
+                    <label asp-for="Tank_Name" class="control-label"></label>
+                    <input asp-for="Tank_Name" class="form-control" disabled />
+                    <span asp-validation-for="Tank_Name" class="text-danger"></span>
+                </div>
+                <div class="form-group row">
+                    <div class="col-sm-6 mb-3 mb-sm-0">
+                        <label asp-for="Tank_Height" class="control-label"></label>
+                        <input asp-for="Tank_Height" class="form-control" disabled />
+                        <span asp-validation-for="Tank_Height" class="text-danger"></span>
+                    </div>
+                    <div class="col-sm-6 mb-3 mb-sm-0">
+                        <label asp-for="TankVolume" class="control-label"></label>
+                        <input asp-for="TankVolume" class="form-control" disabled />
+                        <span asp-validation-for="TankVolume" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-sm-6 mb-3 mb-sm-0">
+                        <div class="form-check">
+                            <input asp-for="tankMovement.IsLevel" class="form-check-input" type="radio" id="option1" value=true>
+                            <label class="form-check-label">
+                                LEVEL
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 mb-3 mb-sm-0">
+                        <div class="form-check">
+                            <input asp-for="tankMovement.IsLevel" class="form-check-input" type="radio" name="options" value="false">
+                            <label class="form-check-label">
+                                VOLUME
+                            </label>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <label asp-for="Height_Safe_Capacity" class="control-label"></label>
+                            <input type="text" asp-for="Height_Safe_Capacity" class="form-control" />
+                            <span asp-validation-for="Height_Safe_Capacity" class="text-danger"></span>
+                        </div>
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <label asp-for="VolumeSafeCapacity" class="control-label"></label>
+                            <input type="text" asp-for="VolumeSafeCapacity" class="form-control" />
+                            <span asp-validation-for="VolumeSafeCapacity" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <label asp-for="tankMovement.Status" class="control-label"></label>
+                            <select asp-for="tankMovement.Status" class="custom-select">
+                                <option selected>Choose...</option>
+                                <option value=true>OPEN</option>
+                                <option value=false>CLOSE</option>
+                            </select>
+                            <span asp-validation-for="tankMovement.Status" class="text-danger"></span>
+                        </div>
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <label asp-for="tankMovement.AlarmTimeStamp" class="control-label"></label>
+                            <input type="text" asp-for="tankMovement.AlarmTimeStamp" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="time-counter" />
+                            <span asp-validation-for="tankMovement.AlarmTimeStamp" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            <div class="form-group col text-center" id="bt-form">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Discard</button>
+                <button type="submit" class="btn btn-success">Save changes</button>
+            </div>
+</form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

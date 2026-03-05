@@ -1,0 +1,38 @@
+﻿@{
+    if (ViewData.TryGetValue("ParentLayout", out var parentLayout))
+    {
+        Layout = (string)parentLayout;
+    }
+    else
+    {
+        //Layout = "/Areas/Identity/Pages/_Layout.cshtml";
+        Layout = "/Views/Shared/_Layout.cshtml";
+    }
+}
+<section class="content-header" style="height:20px">
+    <div class="container-fluid">
+    </div>
+</section>
+<div>
+    <div class="row">
+        <div class="col-sm-3">
+            <partial name="_ManageNav" />
+        </div>
+        <div class="col-sm-9">
+            @RenderBody()
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+    <script>
+        $('#show-password').click(function () {
+            if ($(this).is(':checked')) {
+                $('.password-field').attr('type', 'text');
+            } else {
+                $('.password-field').attr('type', 'password');
+            }
+        });
+    </script>
+}

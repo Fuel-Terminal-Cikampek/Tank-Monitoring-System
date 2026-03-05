@@ -1,0 +1,175 @@
+﻿/* ========================================
+   DASHBOARD COMPACT MODE - Simulate 67% Zoom at 100%
+   ======================================== */
+
+/* ✅ Method 1: Scale the entire dashboard content */
+.dashboard-scaled {
+    transform: scale(0.67);
+    transform-origin: top left;
+    width: 149.25%; /* 100% / 0.67 = ~149.25% untuk compensate scaling */
+    height: auto;
+}
+
+/* ✅ Method 2: Alternative - Reduce all card sizes proportionally */
+/* Jika ingin lebih granular control, gunakan ini: */
+
+/* Tank Card Grid - 6 columns instead of 4 */
+.tank-grid-compact .col-xl-3 {
+    flex: 0 0 16.66667% !important; /* 100% / 6 = 16.67% (6 cards per row) */
+    max-width: 16.66667% !important;
+}
+
+/* Atau 5 columns */
+.tank-grid-5cols .col-xl-3 {
+    flex: 0 0 20% !important; /* 100% / 5 = 20% (5 cards per row) */
+    max-width: 20% !important;
+}
+
+/* ========================================
+   REDUCE ALL ELEMENT SIZES BY ~33%
+   (Equivalent to 67% zoom)
+   ======================================== */
+
+/* Dashboard container compact mode */
+.dashboard-compact {
+    /* Scale factor: 0.67 (67% of original) */
+}
+
+/* Card sizing */
+.dashboard-compact .tank-card-wrapper {
+    min-height: 260px; /* Was 400px * 0.67 = 268px */
+}
+
+/* Tank name text */
+.dashboard-compact .tank-name-text {
+    font-size: clamp(1.3rem, 2.1vw, 1.9rem) !important; /* 67% of original */
+}
+
+/* Flowrate text */
+.dashboard-compact .tank-flowrate-text {
+    font-size: clamp(0.85rem, 1.6vw, 1.3rem) !important; /* 67% of original */
+}
+
+/* Level, Temp, Density text */
+.dashboard-compact .tank-level-text,
+.dashboard-compact .tank-temp-text,
+.dashboard-compact .tank-density-text {
+    font-size: clamp(0.8rem, 1.4vw, 1.2rem) !important; /* 67% of original */
+}
+
+/* Product name */
+.dashboard-compact .card-body small.card-title {
+    font-size: clamp(0.75rem, 1.2vw, 1rem) !important;
+}
+
+/* Details button */
+.dashboard-compact .card-footer.btn {
+    font-size: clamp(0.75rem, 1.2vw, 1rem);
+    padding: clamp(0.4rem, 0.8vw, 0.65rem);
+}
+
+/* Arrow images */
+.dashboard-compact .tank-arrow-img {
+    width: clamp(65px, 9vw, 120px) !important;
+    height: clamp(65px, 9vw, 120px) !important;
+}
+
+/* Progress bar containers */
+.dashboard-compact .tank-level-container,
+.dashboard-compact .tank-water-container {
+    width: clamp(15px, 1.9vw, 25px);
+}
+
+.dashboard-compact .tank-level-percentage,
+.dashboard-compact .tank-water-percentage {
+    font-size: clamp(0.6rem, 0.9vw, 0.8rem) !important;
+    padding: 0.1rem 0.2rem;
+}
+
+/* Icons */
+.dashboard-compact .tank-value-icon {
+    width: clamp(16px, 2vw, 24px);
+    height: clamp(16px, 2vw, 24px);
+    font-size: clamp(0.75rem, 1.2vw, 1rem) !important;
+}
+
+/* Operation button */
+.dashboard-compact .tank-operation-btn {
+    font-size: clamp(0.5rem, 0.75vw, 0.65rem) !important;
+    padding: clamp(0.2rem, 0.4vw, 0.35rem) clamp(0.35rem, 0.6vw, 0.5rem) !important;
+}
+
+/* ========================================
+   MEDIA QUERY OVERRIDES FOR COMPACT MODE
+   ======================================== */
+
+/* 1920x1080 Full HD */
+@media (min-width: 1920px) {
+    .dashboard-compact .tank-name-text {
+        font-size: 1.9rem !important;
+    }
+    
+    .dashboard-compact .tank-flowrate-text {
+        font-size: 1.4rem !important;
+    }
+    
+    .dashboard-compact .tank-level-text,
+    .dashboard-compact .tank-temp-text,
+    .dashboard-compact .tank-density-text {
+        font-size: 1.25rem !important;
+    }
+    
+    .dashboard-compact .tank-arrow-img {
+        width: 105px !important;
+        height: 105px !important;
+    }
+}
+
+/* ========================================
+   ALARM INDICATOR STYLES
+   ======================================== */
+.alarm-indicator-container {
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    z-index: 100;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 200px;
+}
+
+.alarm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    white-space: nowrap;
+}
+
+.alarm-badge.critical {
+    background-color: #dc3545;
+    color: white;
+}
+
+.alarm-badge.warning {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.alarm-badge i {
+    font-size: 11px;
+}
+
+.blink-animation {
+    animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}

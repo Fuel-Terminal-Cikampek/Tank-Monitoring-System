@@ -1,0 +1,37 @@
+﻿@model TMS.Models.WebServiceConfiguration
+
+<div class="table-responsive">
+    <table id="tb-webService" class="table table-striped table table-bordered dt-responsive nowrap" width="100%" cellspacing="0">
+        <thead>
+            <tr>
+
+                <th>
+                    @Html.DisplayNameFor(model => model.Id)
+                </th>
+
+                <th class="min-w-125px">Action</th>
+
+                <th class="min-w-125px">
+                    @Html.DisplayNameFor(model => model.ServiceName)
+                </th>
+
+                <th class="min-w-125px">
+                    @Html.DisplayNameFor(model => model.Status)
+                </th>
+
+                <th class="min-w-125px">
+                    @Html.DisplayNameFor(model => model.URL)
+                </th>
+
+                <th class="min-w-125px">
+                    @Html.DisplayNameFor(model => model.Username)
+                </th>
+
+                <th class="min-w-125px">
+                    @Html.DisplayNameFor(model => model.Password)
+                </th>
+
+            </tr>
+        </thead>
+    </table>
+</div>

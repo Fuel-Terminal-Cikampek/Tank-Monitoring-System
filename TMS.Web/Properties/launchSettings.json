@@ -1,0 +1,31 @@
+{
+  "profiles": {
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "jsWebView2Debugging": true,
+      "sqlDebugging": false,
+      "nativeDebugging": false
+    },
+    "CTM.Web": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sqlDebugging": true,
+      "applicationUrl": "http://localhost:5004",
+      "dotnetRunMessages": "true",
+      "nativeDebugging": true
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:5004",
+      "sslPort": 0
+    }
+  }
+}

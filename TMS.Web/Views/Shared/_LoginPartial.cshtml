@@ -1,0 +1,26 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using TMS.Web.Areas.Identity.Data
+
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+    <ul class="navbar-nav">
+@if (SignInManager.IsSignedIn(User))
+{
+        <form class="form-inline" id="logoutForm" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" style="margin-top:-25px;">
+            <a id="manage" class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
+                @if (UserManager.GetUserAsync(User).Result.UserPhoto != null)
+                {
+                    <img style="width:20px;height:20px; object-fit:cover;border-radius:10px;margin-top:-5px;margin-right:5px;border-color:#fff;" src="data:image/*;base64,@(Convert.ToBase64String(UserManager.GetUserAsync(User).Result.UserPhoto))">
+                }
+                else
+                {
+                    <i class="fas fa-user-circle fa-2x"></i>
+                }
+                <label class="inline">@UserManager.GetUserName(User)</label>
+            </a>
+            <button id="logout" type="submit" class="nav-link btn" style="margin-top:20px;">Logout</button>
+        </form>
+
+}
+</ul>

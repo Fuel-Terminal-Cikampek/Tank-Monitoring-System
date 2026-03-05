@@ -1,0 +1,48 @@
+﻿@model TMS.Models.Product
+
+<!-- Tank Table -->
+<div class="table-responsive">
+    <table id="tb-product" class="table table-striped table-bordered dt-responsive nowrap" width="100%" cellspacing="0" style="font-size:1.5rem; color:black;font-weight:600;">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.Product_ID)
+                </th>
+                <th>Action</th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Product_Code)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Product_Name)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.HexColor)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Default_Density)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Default_Temp)
+                </th>
+            </tr>
+        </thead>
+        <!--<tbody>
+            <tr>
+                <td> </td>
+                <td> </td>
+                <td> </td>
+                <td> </td>
+                <td> </td>
+                <td> </td>
+                <td> </td>
+                <td> </td>
+                <td> </td>
+                <td style="text-align: center;">-->
+                    <!-- Button trigger modal -->
+                    <!--<button type="button" class="btn btn-warning" data-toggle="modal" data-target="#exampleModal"><i class="fas fa-edit fa-lg"></i> Edit</button>
+                </td>
+            </tr>
+        </tbody>-->
+    </table>
+</div>
+<!-- End Tank table -->

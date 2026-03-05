@@ -1,0 +1,477 @@
+@model TMS.Models.NewTankTicket
+
+@{
+    ViewData["Title"] = "AddTankTicket";
+    Layout = null;
+}
+<style>
+    /* Visual indicator untuk input yang disabled */
+    .bg-light {
+        background-color: #f8f9fa !important;
+        cursor: not-allowed;
+    }
+    
+    /* Style untuk checkbox yang disabled */
+    input[type="checkbox"]:disabled + label {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    input[type="checkbox"]:disabled {
+        cursor: not-allowed;
+    }
+</style>
+<script>
+    var date01;
+    var date02;
+    var time01;
+    var time02;
+    // ? FIX: Change Tank_Id to Tank_Number
+    var tankID = '@Model.Tank_Number';
+
+    // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+    jQuery(document).ready(function ($) {
+        // Create date inputs
+        date01 = new DateTime($('#date01'), {
+            format: 'D MMM YYYY'
+        });
+
+        date02 = new DateTime($('#date02'), {
+            format: 'D MMM YYYY'
+        });
+        time01 = new DateTime($('#time01'), {
+            format: 'HH:mm'
+        });
+        time02 = new DateTime($('#time02'), {
+            format: 'HH:mm'
+        });
+        
+        // ? Setup checkbox disable logic
+        setupCheckboxToggle();
+        
+        loadData();
+    });
+
+    // ? FUNGSI: Setup logic untuk disable/enable form berdasarkan checkbox
+    function setupCheckboxToggle() {
+        var checkOpen = $('#CheckStatusOpen');
+        var checkClose = $('#CheckStatusClose');
+        
+        // Form inputs untuk OPEN
+        var openInputs = $('#date01, #time01, #levelOpen, #waterOpen, #temperatureOpen, #testTemperatureOpen, #densityOpen');
+        
+        // Form inputs untuk CLOSE
+        var closeInputs = $('#date02, #time02, #levelClose, #waterClose, #temperatureClose, #testTemperatureClose, #densityClose');
+        
+        // Event handler untuk checkbox OPEN
+        checkOpen.on('change', function() {
+            if ($(this).is(':checked')) {
+                // OPEN dicentang -> disable CLOSE checkbox dan form
+                checkClose.prop('disabled', true);
+                closeInputs.prop('disabled', true);
+                closeInputs.addClass('bg-light');
+                
+                // Enable OPEN form
+                openInputs.prop('disabled', false);
+                openInputs.removeClass('bg-light');
+            } else {
+                // OPEN tidak dicentang -> enable CLOSE checkbox
+                checkClose.prop('disabled', false);
+                closeInputs.prop('disabled', false);
+                closeInputs.removeClass('bg-light');
+            }
+        });
+        
+        // Event handler untuk checkbox CLOSE
+        checkClose.on('change', function() {
+            if ($(this).is(':checked')) {
+                // CLOSE dicentang -> disable OPEN checkbox dan form
+                checkOpen.prop('disabled', true);
+                openInputs.prop('disabled', true);
+                openInputs.addClass('bg-light');
+                
+                // Enable CLOSE form
+                closeInputs.prop('disabled', false);
+                closeInputs.removeClass('bg-light');
+            } else {
+                // CLOSE tidak dicentang -> enable OPEN checkbox
+                checkOpen.prop('disabled', false);
+                openInputs.prop('disabled', false);
+                openInputs.removeClass('bg-light');
+            }
+        });
+        
+        // Initial state - kedua form enabled
+        openInputs.prop('disabled', false);
+        closeInputs.prop('disabled', false);
+    }
+
+    //get data Tank by Id
+    function loadData() {
+        // ? FIX: Change Tank_Id to Tank_Number
+        var id = document.getElementById("Tank_Number").value;
+        var Method = 'Automatic';
+        var time = '@DateTime.Now.ToString("d MMM yyyy HH:mm:ss")';
+        if (id != 0 && id != "") {
+            GetData(id, Method, time);
+        }
+    }
+
+    //get data open Tank by Id
+    function loadDataOpen() {
+        // ? FIX: Change Tank_Id to Tank_Number
+        var id = document.getElementById("Tank_Number").value;
+        var Method = "Automatic";
+        var timerequest = document.getElementById("date01").value +' '+ document.getElementById("time01").value;
+        if (id != 0 && id != "") {
+            GetDataOpen(id, Method, timerequest);
+        }
+    }
+
+    //get data close Tank by Id
+    function loadDataClose() {
+        // ? FIX: Change Tank_Id to Tank_Number
+        var id = document.getElementById("Tank_Number").value;
+        var Method = "Automatic";
+        var timerequest = document.getElementById("date02").value + ' ' +document.getElementById("time02").value;
+        if (id != 0 && id != "") {
+            GetDataClose(id, Method, timerequest);
+        }
+    }
+
+    function SaveChanges() {
+        var form1 = $('#formData').serializeArray();
+
+        // ? FIX: Change Tank_Id to Tank_Number
+        // Check if tank number is not filled
+        if (!$('#Tank_Number').val() || $('#Tank_Number').val() == "0" || $('#Tank_Number').val() == "") {
+            alert("Harap Inputkan Nomor Tanki");
+            return;
+        }
+
+        // Check if Operation_Type is not filled
+        if ($('#Operation_Type').val() == "--All Operation Type--") {
+            alert("Harap Inputkan Tipe Operasi");
+            return;
+        }
+        
+        var btSave = document.getElementById("bt-save");
+        btSave.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Loading....';
+        btSave.disabled = true;
+        
+        // Convert form data to object
+        var formData1 = {};
+        form1.forEach(function (item) {
+            formData1[item.name] = item.value;
+        });
+
+        console.log("Form Data 1")
+
+        // Add checkbox values
+        var checkStatusOpen = $('#CheckStatusOpen');
+        formData1.CheckStatusOpen = checkStatusOpen.is(':checked') ? '1' : '2';
+
+        var checkStatusClose = $('#CheckStatusClose');
+        formData1.CheckStatusClose = checkStatusClose.is(':checked') ? '1' : '2';
+        
+        if (formData1.CheckStatusOpen == '2' && formData1.CheckStatusClose == '2') {
+            alert("Harap pilih Status OPEN / CLOSE Tank Ticket");
+            btSave.innerText = "Save Changes";
+            btSave.disabled = false;
+            return;
+        }
+        
+        var formsData = formData1;
+
+        $.ajax({
+            url: '@Url.Action("AddOpenCloseTicket", "TankTicket")',
+            type: 'POST',
+            data: JSON.stringify(formsData),
+            contentType: 'application/json; charset=utf-8',
+            success: function (response) {
+                btSave.innerText = "Save Changes";
+                btSave.disabled = false;
+
+                if (response.isValid == true) {
+                    document.getElementById("bt-alert").style.display = "block";
+                    $("#custom-modal .modal-body").html("TANK TICKET BERHASIL TERSIMPAN!");
+                    $("#custom-modal .modal-title").html("ALERT");
+                    $("#custom-modal .modal-body").css("color", "green");
+                    $("#custom-modal").modal('show');
+                }
+                else{
+                    document.getElementById("bt-alert").style.display = "none";
+                    $("#custom-modal .modal-body").html("GAGAL MENYIMPAN TANK TICKET!");
+                    $("#custom-modal .modal-title").html("ALERT");
+                    $("#custom-modal .modal-body").css("color", "red");
+                    $("#custom-modal").modal('show');
+                }
+
+                oTable.ajax.reload(null, false);
+            },
+            error: function (xhr, status, error) {
+                btSave.innerText = "Save Changes";
+                btSave.disabled = false;
+            }
+        });
+    }
+
+    function SaveAndPost() {
+        var form1 = $('#formData').serializeArray();
+
+        // ? FIX: Change Tank_Id to Tank_Number
+        if (!$('#Tank_Number').val() || $('#Tank_Number').val() == "0" || $('#Tank_Number').val() == "") {
+            alert("Harap Inputkan Nomor Tanki");
+            return;
+        }
+
+        if ($('#Operation_Type').val() == "--All Operation Type--") {
+            alert("Harap Inputkan Tipe Operasi");
+            return;
+        }
+        
+        var btSave = document.getElementById("bt-savepost");
+        btSave.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Loading....';
+        btSave.disabled = true;
+        
+        var formData1 = {};
+        form1.forEach(function (item) {
+            formData1[item.name] = item.value;
+        });
+
+        // Tambahkan IsPosting
+        formData1['IsPosting'] = '1';
+
+        console.log("Form Data 1")
+
+        // Add checkbox values
+        var checkStatusOpen = $('#CheckStatusOpen');
+        formData1.CheckStatusOpen= checkStatusOpen.is(':checked') ? '1' : '2';
+
+        var checkStatusClose = $('#CheckStatusClose');
+        formData1.CheckStatusClose = checkStatusClose.is(':checked') ? '1' : '2';
+        
+        if (formData1.CheckStatusOpen == '2' && formData1.CheckStatusClose == '2') {
+            alert("Harap pilih Status OPEN / CLOSE Tank Ticket");
+            btSave.innerText = "Save and Posting";
+            btSave.disabled = false;
+            return;
+        }
+        
+        var formsData = formData1;
+
+        $.ajax({
+            url: '@Url.Action("AddOpenCloseTicket", "TankTicket")',
+            type: 'POST',
+            data: JSON.stringify(formsData),
+            contentType: 'application/json; charset=utf-8',
+            success: function (response) {
+                btSave.innerText = "Save and Posting";
+                btSave.disabled = false;
+
+                if (response.isValid == false) {
+                    document.getElementById("bt-alert").style.display = "none";
+                    $("#custom-modal .modal-body").html(response.message);
+                    $("#custom-modal .modal-body").css("color", "red");
+                    $("#custom-modal .modal-title").html("ALERT");
+                    $("#custom-modal").modal('show');
+                }
+                else {
+                    document.getElementById("bt-alert").style.display = "block";
+                    $("#custom-modal .modal-body").html(response.message);
+                    $("#custom-modal .modal-body").css("color", "green");
+                    $("#custom-modal .modal-title").html("ALERT");
+                    $("#custom-modal").modal('show');
+                }
+                oTable.ajax.reload(null, false);
+            },
+            error: function (xhr, status, error) {
+                btSave.innerText = "Save and Posting";
+                btSave.disabled = false;
+            }
+        });
+    }
+
+    function CloseModal() {
+        $("#form-modal").modal('hide');
+    }
+
+</script>
+
+<!-- ? FIX: Change asp-route-id from Tank_Id to Tank_Number -->
+<form id="formData" asp-route-id="@Model.Tank_Number" onsubmit="" autocomplete="off" style="font-size:1.25rem; color:black;font-weight:600;">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    
+    <!-- ? FIX: Change Tank_Id to Tank_Number -->
+    <input type="hidden" asp-for="Tank_Number" id="Tank_Number" />
+    
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <!-- ? FIX: Label still shows "Tank_Id" for display, but binds to Tank.Tank_Name -->
+            <label class="control-label">TANK. NO</label>
+            <input disabled asp-for="Tank.Tank_Name" class="form-control" />
+            <span asp-validation-for="Tank_Number" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="Shipment_Id" class="control-label"></label>
+            <input asp-for="Shipment_Id" class="form-control" />
+            <span asp-validation-for="Shipment_Id" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Operation_Type" class="control-label"></label>
+            <select asp-for="Operation_Type" class="custom-select" asp-items=@(new SelectList(ViewBag.ticketTypes,"Operation","Description"))>
+            </select>
+            <span asp-validation-for="Operation_Type" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="Do_Number" class="control-label"></label>
+            <input asp-for="Do_Number" class="form-control" />
+            <span asp-validation-for="Do_Number" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 bordered-form">
+            <div class="form-group">
+                <div class="form-check large-checkbox row ml-1">
+                    <input class="form-check-input col-md-3" type="checkbox" value="1" id="CheckStatusOpen">
+                    <label class="form-check-label col-md-9 ml-lg-5 mt-2" for="CheckStatusOpen">
+                        OPEN
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="control-label">DATE</label>
+                <input asp-for="DateOpen" type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="date01" value="@DateTime.Now.ToString("dd MMM yyyy")" />
+                <span asp-validation-for="DateOpen" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="control-label">TIME</label>
+                <div class="row">
+                    <div class="col-md-9">
+                        <input asp-for="TimeOpen" type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="time01" style="width:90%" value="@DateTime.Now.ToString("HH:mm")" />
+                        <span asp-validation-for="TimeOpen" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <a onclick="loadDataOpen()" class="btn btn-success btn-circle">
+                            <i class="fas fa-refresh"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LiquidLevelOpen" class="control-label"></label>
+                <input id="levelOpen" asp-for="LiquidLevelOpen" class="form-control" />
+                <span asp-validation-for="LiquidLevelOpen" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="WaterLevelOpen" class="control-label"></label>
+                <input id="waterOpen" asp-for="WaterLevelOpen" class="form-control" />
+                <span asp-validation-for="WaterLevelOpen" class="text-danger"></span>
+            </div>
+
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="LiquidTemperatureOpen" class="control-label"></label>
+                    <input id="temperatureOpen" asp-for="LiquidTemperatureOpen" class="form-control" />
+                    <span asp-validation-for="LiquidTemperatureOpen" class="text-danger"></span>
+                </div>
+
+                <div class="col-sm-6 mb-sm-0">
+                    <label asp-for="TestTemperatureOpen" class="control-label"></label>
+                    <input id="testTemperatureOpen" asp-for="TestTemperatureOpen" class="form-control" />
+                    <span asp-validation-for="TestTemperatureOpen" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LiquidDensityOpen" class="control-label">Density</label>
+                <input id="densityOpen" asp-for="LiquidDensityOpen" class="form-control" />
+                <span asp-validation-for="LiquidDensityOpen" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6 bordered-form">
+            <div class="form-group">
+                <div class="form-check large-checkbox row ml-1">
+                    <input class="form-check-input col-md-3" type="checkbox" value="1" id="CheckStatusClose">
+                    <label class="form-check-label col-md-9 ml-lg-5 mt-2" for="CheckStatusClose">
+                        CLOSE
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label">DATE</label>
+                <input asp-for="DateClose" type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="date02" value="@DateTime.Now.ToString("dd MMM yyyy")" />
+                <span asp-validation-for="DateClose" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="control-label">TIME</label>
+                <div class="row">
+                    <div class="col-md-9">
+                        <input asp-for="TimeClose" type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="time02" style="width:90%" value="@DateTime.Now.ToString("HH:mm")" />
+                        <span asp-validation-for="TimeClose" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <a onclick="loadDataClose()" class="btn btn-success btn-circle">
+                            <i class="fas fa-refresh"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LiquidLevelClose" class="control-label"></label>
+                <input id="levelClose" asp-for="LiquidLevelClose" class="form-control" />
+                <span asp-validation-for="LiquidLevelClose" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="WaterLevelClose" class="control-label"></label>
+                <input id="waterClose" asp-for="WaterLevelClose" class="form-control" />
+                <span asp-validation-for="WaterLevelClose" class="text-danger"></span>
+            </div>
+
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="LiquidTemperatureClose" class="control-label"></label>
+                    <input id="temperatureClose" asp-for="LiquidTemperatureClose" class="form-control" />
+                    <span asp-validation-for="LiquidTemperatureClose" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb-sm-0">
+                    <label asp-for="TestTemperatureClose" class="control-label"></label>
+                    <input id="testTemperatureClose" asp-for="TestTemperatureClose" class="form-control" />
+                    <span asp-validation-for="TestTemperatureClose" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LiquidDensityClose" class="control-label">Density</label>
+                <input id="densityClose" asp-for="LiquidDensityClose" class="form-control" />
+                <span asp-validation-for="LiquidDensityClose" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="form-group col text-center mt-lg-5">
+    <div class="row">
+        <div class="col-md-6">
+            <button type="button" id="bt-savepost" onclick="SaveAndPost()" class="btn btn-primary" style="font-size: 1.25rem; width:90%">Save and Posting</button>
+        </div>
+        <div class="col-md-6">
+            <button type="button" id="bt-save" onclick="SaveChanges()" class="btn btn-success" style="font-size: 1.25rem; width:90%">Save changes</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,161 @@
+@model TMS.Models.WebServiceConfiguration
+@using TMS.Web.Authorization
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+}
+<head>
+    @section Scripts{
+        <script type="text/javascript" asp-append-version="true">
+            // ? Check if current user can modify data (admin only)
+            var canModifyData = @Json.Serialize(User.CanModifyData());
+
+            var oTable;
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                oTable = $('#tb-webService').DataTable(
+                    {
+                        "serverSide": true, // for process server side
+                        "scrollY": true,
+                        "scrollX": true,
+                        "autoWidth": false,
+                        "scrollCollapse": true,
+                        "paging": true,
+                        "fixedColumns": true,
+                        "processing": true,
+                        "ajax": {
+                            "url": "@Url.Action("LoadData")",
+                            "type": "POST",
+                            "datatype": "json"
+                        },
+                        "columnDefs": [{
+                            "targets": 0,
+                            "visible": false,
+                            "searchable": false
+                        }],
+                        "columns": [
+                            { "data": "id", "name": "Id", "autoWidth": true },
+                            {
+                                data: null,
+                                render: function (data, type, full, meta) {
+                                    var renderHTML = "";
+                                    var head = "<div class='btn-group' role='group' aria-label='Basic example'>";
+                                    var edit = canModifyData ? "<button type='button' class='btn btn-warning' onclick=UpdateData('" + full.id + "');><i class='fas fa-edit'></i></button>" : "";
+                                    var dlete = canModifyData ? "<button type='button' class='btn btn-danger' onclick=DeleteData('" + full.id + "');><i class='fas fa-trash-alt'></i></button>" : "";
+                                    var foot = "</div>";
+                                    renderHTML = head + edit + dlete + foot;
+                                    return renderHTML;
+                                }
+                            },
+                            { "data": "serviceName", "name": "ServiceName", "autoWidth": true },
+                            { "data": "status", "name": "Status", "autoWidth": true },
+                            { "data": "url", "name": "URL", "autoWidth": true },
+                            { "data": "username", "name": "Username", "autoWidth": true },
+                            { "data": "password", "name": "Password", "autoWidth": true },
+                        ]
+                    }
+                );
+            });//end document ready
+            //update data
+            function UpdateData(id) {
+                var toSend =
+                {
+                    id: id
+                };
+                $.ajax({
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "@Url.Action("AddOrEdit")",
+                    data: toSend,
+                    success: function (res) {
+                        $("#form-modal").modal();
+                        $("#form-modal .modal-body").html(res);
+                        $("#form-modal .modal-title").html('Edit Tank');
+                        $("#form-modal").modal('show');
+                    },
+                    error: function (res) {
+                    }
+                })
+            }
+            //start delete data
+            function DeleteData(id) {
+                if (confirm('Are you sure want to delete this data ?')) {
+                    var toSend =
+                    {
+                        id: id
+                    };
+                    $.ajax({
+                        type: "POST",
+                        url: "@Url.Action("Delete")",
+                        data: toSend,
+                        success: function (res) {
+                            oTable = $('#tb-webService').DataTable();
+                            oTable.ajax.reload(null, false);
+                        },
+                        error: function (err) {
+                        }
+                    })
+                }
+            }
+        </script>
+    }
+</head>
+
+<!-- Begin Page Content -->
+<div class="container-fluid" style="width: 100%;">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Web Service Configuration List</h1>
+        <a value="reload" onclick="document.location.reload(true)" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
+            <i class="fas fa-redo-alt"></i>
+        </a>
+    </div>
+
+    <!-- Submain Content -->
+    <div class="card shadow-lg rounded" style="font-size:12px;">
+        <div class="card-header bg-gradient-info"></div>
+        <div class="card-body">
+
+            <!-- Tank Filter -->
+            <form>
+                <div class="form-row">
+                    <div class="col col-md-3">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="Tank-Name">Service Name</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Insert Service name" aria-label="Tank-name" id="tank-name" aria-describedby="Tank-name">
+                        </div>
+                    </div>
+                    <div class="col col-md-3">
+                        <div class="input-group">
+                            <button type="reset" class="btn btn-warning" style="width: 100%;" onclick="javascript:reset();"><i class="fas fa-undo-alt"></i> Reset Filter</button>
+                        </div>
+                    </div>
+                    @* ? Only admins can create *@
+                    @if (User.CanModifyData())
+                    {
+                        <div class="col col-md-3">
+                            <div class="input-group">
+                                <button type="button" class="btn btn-primary" style="width: 100%;" onclick="showInPopup('@Url.Action("AddOrEdit","WebServiceConfigurations",null,Context.Request.Scheme)','Add New Web Service')"><i class="fas fa-plus"></i> New</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </form>
+            <!-- End Tank Filter -->
+            <!-- Divider -->
+            <hr class="sidebar-divider my-3">
+
+            <!-- Tank Table -->
+            @await Html.PartialAsync("_ViewAll", Model)
+            <!-- End Tank table -->
+
+        </div>
+    </div>
+    <!-- End Submain Content -->
+
+</div>
+<!-- End Page Content -->

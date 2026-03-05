@@ -1,0 +1,281 @@
+﻿@model TMS.Models.Tank
+
+@{
+    ViewData["Title"] = "AddOrEdit";
+    Layout = null;
+}
+<div class="row">
+    <div class="col-md-12">
+        <form asp-action="AddOrEdit" asp-route-id="@Model.Tank_Name" onsubmit="return jQueryAjaxPost(this);" autocomplete="off">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="Tank_Name" class="control-label"></label>
+                    @if (string.IsNullOrEmpty(Model.Tank_Name))
+                    {
+                        <!-- NEW mode: Tank_Name can be entered -->
+                        <input asp-for="Tank_Name" class="form-control" />
+                    }
+                    else
+                    {
+                        <!-- EDIT mode: Tank_Name is readonly (it's the primary key) -->
+                        <input asp-for="Tank_Name" class="form-control" readonly style="background-color: #e9ecef;" />
+                        <input type="hidden" asp-for="Tank_Name" />
+                    }
+                    <span asp-validation-for="Tank_Name" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="Product_ID" class="control-label"></label>
+                    <select asp-for="Product_ID" class="form-control" asp-items=@(new SelectList(ViewBag.ProductId,"Product_Code","Product_Name"))></select>
+                    <span asp-validation-for="Product_ID" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="TankVolume" class="control-label"></label>
+                    <input asp-for="TankVolume" class="form-control" />
+                    <span asp-validation-for="TankVolume" class="text-danger"></span>
+                </div>
+
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="Tank_Height" class="control-label"></label>
+                    <input asp-for="Tank_Height" class="form-control" />
+                    <span asp-validation-for="Tank_Height" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="Tank_Diameter" class="control-label"></label>
+                    <input asp-for="Tank_Diameter" class="form-control" />
+                    <span asp-validation-for="Tank_Diameter" class="text-danger"></span>
+                </div>
+
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="VolumeSafeCapacity" class="control-label"></label>
+                    <input asp-for="VolumeSafeCapacity" class="form-control" />
+                    <span asp-validation-for="VolumeSafeCapacity" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="Height_Deadstock" class="control-label"></label>
+                    <input asp-for="Height_Deadstock" class="form-control" />
+                    <span asp-validation-for="Height_Deadstock" class="text-danger"></span>
+                </div>
+
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="Blank" class="control-label"></label>
+                    <input asp-for="Blank" class="form-control" />
+                    <span asp-validation-for="Blank" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="Tape" class="control-label"></label>
+                    <input asp-for="Tape" class="form-control" />
+                    <span asp-validation-for="Tape" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="Bob" class="control-label"></label>
+                    <input asp-for="Bob" class="form-control" />
+                    <span asp-validation-for="Bob" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="IsUsed" class="control-label"></label>
+                    <select asp-for="IsUsed" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="IsUsed" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="IsAutoPI" class="control-label"></label>
+                    <select asp-for="IsAutoPI" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="IsAutoPI" class="text-danger"></span>
+                </div>
+            </div>
+
+            @* <div class="form-group row">
+            <div class="col-sm-6 mb-3 mb-sm-0">
+                <label asp-for="IsManualLevel" class="control-label"></label>
+                <select asp-for="IsManualLevel" class="custom-select">
+                    <option value="True">True</option>
+                    <option value="False">False</option>
+                </select>
+                <span asp-validation-for="IsManualLevel" class="text-danger"></span>
+            </div>
+
+            <div class="col-sm-6 mb-3 mb-sm-0">
+                <label asp-for="ManualLevel" class="control-label">Manual Level</label>
+                <input asp-for="ManualLevel" class="form-control" />
+                <span asp-validation-for="ManualLevel" class="text-danger"></span>
+            </div>
+        </div> *@
+
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="IsManualTemp" class="control-label"></label>
+                    <select asp-for="IsManualTemp" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="IsManualTemp" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="ManualTemp" class="control-label"></label>
+                    <input asp-for="ManualTemp" class="form-control" />
+                    <span asp-validation-for="ManualTemp" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="IsManualTestTemp" class="control-label"></label>
+                    <select asp-for="IsManualTestTemp" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="IsManualTestTemp" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="ManualTestTemp" class="control-label"></label>
+                    <input asp-for="ManualTestTemp" class="form-control" />
+                    <span asp-validation-for="ManualTestTemp" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="IsManualDensity" class="control-label"></label>
+                    <select asp-for="IsManualDensity" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="IsManualDensity" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="ManualLabDensity" class="control-label"></label>
+                    <input asp-for="ManualLabDensity" class="form-control" />
+                    <span asp-validation-for="ManualLabDensity" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="IsManualWaterLevel" class="control-label"></label>
+                    <select asp-for="IsManualWaterLevel" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="IsManualWaterLevel" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label asp-for="ManualWaterLevel" class="control-label"></label>
+                    <input asp-for="ManualWaterLevel" class="form-control" />
+                    <span asp-validation-for="ManualWaterLevel" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-4 mb-3 mb-sm-0">
+                    <label asp-for="UseAlarmLL" class="control-label"></label>
+                    <select asp-for="UseAlarmLL" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="UseAlarmLL" class="text-danger"></span>
+                </div>
+                <div class="col-sm-2 mb-3 mb-sm-0">
+                    <label asp-for="LevelLL" class="control-label"></label>
+                    <input asp-for="LevelLL" class="form-control" />
+                    <span asp-validation-for="LevelLL" class="text-danger"></span>
+                </div>
+                <div class="col-sm-4 mb-3 mb-sm-0">
+                    <label asp-for="UseAlarmL" class="control-label"></label>
+                    <select asp-for="UseAlarmL" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="UseAlarmL" class="text-danger"></span>
+                </div>
+                <div class="col-sm-2 mb-3 mb-sm-0">
+                    <label asp-for="LevelL" class="control-label"></label>
+                    <input asp-for="LevelL" class="form-control" />
+                    <span asp-validation-for="LevelL" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-4 mb-3 mb-sm-0">
+                    <label asp-for="UseAlarmH" class="control-label"></label>
+                    <select asp-for="UseAlarmH" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="UseAlarmH" class="text-danger"></span>
+                </div>
+                <div class="col-sm-2 mb-3 mb-sm-0">
+                    <label asp-for="LevelH" class="control-label"></label>
+                    <input asp-for="LevelH" class="form-control" />
+                    <span asp-validation-for="LevelH" class="text-danger"></span>
+                </div>
+                <div class="col-sm-4 mb-3 mb-sm-0">
+                    <label asp-for="UseAlarmHH" class="control-label"></label>
+                    <select asp-for="UseAlarmHH" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="UseAlarmHH" class="text-danger"></span>
+                </div>
+                <div class="col-sm-2 mb-2 mb-sm-0">
+                    <label asp-for="LevelHH" class="control-label"></label>
+                    <input asp-for="LevelHH" class="form-control" />
+                    <span asp-validation-for="LevelHH" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-4 mb-3 mb-sm-0">
+                    <label asp-for="UseAlarmTempL" class="control-label"></label>
+                    <select asp-for="UseAlarmTempL" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="UseAlarmTempL" class="text-danger"></span>
+                </div>
+                <div class="col-sm-2 mb-3 mb-sm-0">
+                    <label asp-for="TempL" class="control-label"></label>
+                    <input asp-for="TempL" class="form-control" />
+                    <span asp-validation-for="TempL" class="text-danger"></span>
+                </div>
+                <div class="col-sm-4 mb-3 mb-sm-0">
+                    <label asp-for="UseAlarmTempH" class="control-label"></label>
+                    <select asp-for="UseAlarmTempH" class="custom-select">
+                        <option value="True">True</option>
+                        <option value="False">False</option>
+                    </select>
+                    <span asp-validation-for="UseAlarmTempH" class="text-danger"></span>
+                </div>
+                <div class="col-sm-2 mb-3 mb-sm-0">
+                    <label asp-for="TempH" class="control-label"></label>
+                    <input asp-for="TempH" class="form-control" />
+                    <span asp-validation-for="TempH" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group col text-center mt-lg-5">
+                <button type="submit" class="btn btn-success" style="width:50%">Save changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

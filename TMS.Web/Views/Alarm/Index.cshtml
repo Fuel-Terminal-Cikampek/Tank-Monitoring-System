@@ -1,0 +1,159 @@
+@{
+    ViewData["Title"] = "Alarm Management";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+}
+
+<head>
+    @section Scripts{
+        <script type="text/javascript" asp-append-version="true">
+            var oTable;
+            // ✅ SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                oTable = $('#tb-alarm').DataTable({
+                    "serverSide": true,
+                    "scrollY": true,
+                    "scrollX": true,
+                    "autoWidth": false,
+                    "scrollCollapse": true,
+                    "paging": true,
+                    "fixedColumns": true,
+                    "processing": true,
+                    "pageLength": 50,
+                    "ajax": {
+                        "url": "@Url.Action("LoadData")",
+                        "type": "POST",
+                        "datatype": "json"
+                    },
+                    "columnDefs": [{
+                        "targets": '_all',
+                        orderable: false
+                    }],
+                    "columns": [
+                        {
+                            data: null,
+                            render: function (data, type, full, meta) {
+                                return "<button type='button' class='btn btn-sm btn-success' onclick=AckAlarmSingle('" + full.Tank_Number + "');><i class='fas fa-check'></i> ACK</button>";
+                            }
+                        },
+                        { "data": "Tank_Name", "name": "Tank_Name", "autoWidth": true },
+                        { "data": "Product_Name", "name": "Product_Name", "autoWidth": true },
+                        { "data": "Level", "name": "Level", "autoWidth": true },
+                        { "data": "AlarmStatus", "name": "AlarmStatus", "autoWidth": true },
+                        { "data": "AlarmMessage", "name": "AlarmMessage", "autoWidth": true },
+                        {
+                            "data": "Ack",
+                            "name": "Ack",
+                            "autoWidth": true,
+                            render: function (data, type, full, meta) {
+                                return data === true ? '<span class="badge badge-danger">ACTIVE</span>' : '<span class="badge badge-success">ACK</span>';
+                            }
+                        },
+                        {
+                            "data": "TimeStamp",
+                            "name": "TimeStamp",
+                            "autoWidth": true,
+                            render: function (data, type, full, meta) {
+                                if (data) {
+                                    var date = new Date(data);
+                                    return date.toLocaleString('id-ID');
+                                }
+                                return '';
+                            }
+                        }
+                    ]
+                });
+            });
+
+            function AckAlarmSingle(tankName) {
+                if (confirm('Are you sure want to acknowledge this alarm?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: "@Url.Action("AckAlarm")",
+                        data: { tankName: tankName },
+                        success: function (res) {
+                            if (res.isValid) {
+                                alert(res.message);
+                                oTable.ajax.reload(null, false);
+                            } else {
+                                alert('Error: ' + res.message);
+                            }
+                        },
+                        error: function (err) {
+                            alert('Error acknowledging alarm');
+                        }
+                    })
+                }
+            }
+
+            function AckAllAlarms() {
+                if (confirm('Are you sure want to acknowledge ALL alarms?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: "@Url.Action("AckAlarm")",
+                        data: {},
+                        success: function (res) {
+                            if (res.isValid) {
+                                alert(res.message);
+                                oTable.ajax.reload(null, false);
+                            } else {
+                                alert('Error: ' + res.message);
+                            }
+                        },
+                        error: function (err) {
+                            alert('Error acknowledging alarms');
+                        }
+                    })
+                }
+            }
+
+            function reloadTable() {
+                oTable.ajax.reload(null, false);
+            }
+        </script>
+    }
+</head>
+
+<!-- Begin Page Content -->
+<div class="container-fluid" style="width: 100%;">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Alarm Management</h1>
+        <div>
+            <a value="reload" onclick="reloadTable()" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
+                <i class="fas fa-redo-alt"></i> Refresh
+            </a>
+            <a onclick="AckAllAlarms()" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm">
+                <i class="fas fa-check-double"></i> ACK All
+            </a>
+        </div>
+    </div>
+
+    <!-- Submain Content -->
+    <div class="card shadow-lg rounded" style="font-size:12px;">
+        <div class="card-header bg-gradient-info"></div>
+        <div class="card-body">
+            <!-- Alarm Table -->
+            <div class="table-responsive">
+                <table id="tb-alarm" class="table table-striped table-bordered dt-responsive nowrap" cellspacing="0" style="font-size:1.2rem; color:black;font-weight:600;">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Tank Name</th>
+                            <th>Product</th>
+                            <th>Level</th>
+                            <th>Alarm Type</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+            <!-- End Alarm table -->
+        </div>
+    </div>
+    <!-- End Submain Content -->
+
+</div>
+<!-- End Page Content -->

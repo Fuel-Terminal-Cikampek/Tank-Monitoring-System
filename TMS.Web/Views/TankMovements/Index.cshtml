@@ -1,0 +1,287 @@
+@model TMS.Models.Tank
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+}
+<head>
+    @section Scripts{
+        <script type="text/javascript">
+            var oTable;
+            var interval;
+            var intervalTable;
+            var blinkAlarm = false;
+            var blinkAlarmModal = false;
+            // ? SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                oTable = $('#tb-tankmovement').DataTable(
+                    {
+                        "serverSide": true, // for process server side
+                        "scrollY": true,
+                        "scrollX": true,
+                        "autoWidth": false,
+                        "scrollCollapse": true,
+                        "paging": true,
+                        "fixedColumns": true,
+                        "processing": false,
+                        "pageLength": 50,
+                        "ajax": {
+                            "url": "@Url.Action("LoadData")",
+                            "type": "POST",
+                            "datatype": "json"
+                        },
+                        "columnDefs": [{
+                            "targets": 0,
+                            "visible": false,
+                            "searchable": false
+                        }],
+                        "columns": [
+                            { "data": "Tank_Name", "name": "Tank_Name", "autoWidth": true },
+                            {
+
+                                "data": "Alarm",
+                                "render": function (data, type) {
+                                    if (data & blinkAlarm) {
+                                        return "<i class='fas fa-bell' style='font-size:24px; color: red;'></i>";
+                                    }
+                                    return "";
+                                },
+                                "name": "Alarm", "autoWidth": true
+                            },
+                            {
+                                data: null,
+                                render: function (data, type, full, meta) {
+                                    var renderHTML = "";
+                                    var head = "<div class='btn-group' role='group' aria-label='Basic example'>";
+                                    var btConfig = "<button type='button' class='btn btn-warning' onclick=Config('" + full.Tank_Name + "');><i class='fas fa-edit fa-lg'></i>CONFIG</button>";
+                                    var btView = "<button type='button' class='btn btn-success' onclick=View('" + full.Tank_Name + "');><i class='fas fa-eye fa-lg'></i>VIEW</button>";
+                                    var foot = "</div>";
+                                    if (full.Status) {
+                                        renderHTML = head + btConfig + btView + foot;
+                                    }
+                                    else {
+                                        renderHTML = head + btConfig + foot;
+                                    }
+                                    return renderHTML;
+                                }
+                                , "autoWidth": true
+                            },
+                            { "data": "Tank_Name", "name": "Tank_Name", "autoWidth": true },
+                            { "data": "Product_Name", "name": "Product_Name", "autoWidth": true },
+                            {
+                                "data": "Status",
+                                "render": function (data, type) {
+                                    if (data) {
+                                        return '<span style="font-size: 12px;width: 100px;" class="badge badge-success">' + "OPEN" + '</span>';
+                                    }
+                                    else if (!data) {
+                                        return '<span style="font-size: 12px; width: 100px;" class="badge badge-danger">' + "CLOSE" + '</span>';
+                                    }
+                                    else {
+                                        return "";
+                                    }
+                                },
+                                "name": "Status", "autoWidth": true
+                            },
+                            { "data": "AlarmTimeStamp", "name": "AlarmTimeStamp", "autoWidth": true },
+                            {
+                                "data": "Height_Safe_Capacity",
+                                render: function (data, type) {
+                                    return data.toFixed(0);
+                                },
+                                "name": "Height_Safe_Capacity", "autoWidth": true
+                            },
+                            {
+                                "data": "LiquidLevel",
+                                render: function (data, type) {
+                                    return data.toFixed(0);
+                                },
+                                "name": "LiquidLevel", "autoWidth": true
+                            },
+                            {
+                                "data": "DelLevel",
+                                render: function (data, type) {
+                                    return data.toFixed(0);
+                                },
+                                "name": "DelLevel", "autoWidth": true
+                            },
+                            {
+                                "data": "FlowRateKLperH",
+                                render: function (data, type) {
+                                    return data.toFixed(0);
+                                },
+                                "name": "FlowRateKLperH", "autoWidth": true
+                            },
+                            { "data": "EstimationTimeStamp", "name": "EstimationTimeStamp", "autoWidth": true }
+                        ]
+                    }
+                );
+                $('#modal-view').on('hidden.bs.modal', function () {
+                    clearInterval(interval);
+                });
+                intervalTable = setInterval(function () {
+                    reloadTable();
+                    if (blinkAlarm) {
+                        blinkAlarm = false;
+                    }
+                    else {
+                        blinkAlarm = true;
+                    }
+                }
+                , 2000);
+                function reloadTable() {
+                    oTable.ajax.reload(null, false);
+                }
+            });//end document ready
+           //update data
+            function Config(id) {
+                var toSend =
+                {
+                    id: id
+                };
+                $.ajax({
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "@Url.Action("Config")",
+                    data: toSend,
+                    success: function (res) {
+                        $("#form-modal .modal-body").html(res);
+                        $("#form-modal .modal-title").html('Movement Configuration');
+                        $("#form-modal").modal('show');
+                    },
+                    error: function (res) {
+                    }
+                })
+            }
+             //View data
+            function View(tankId) {
+                $('#spinner').show();
+                interval = setInterval(function () {
+                    RealTimeView(tankId);
+                }, 3000); // Repeat the request every 3 seconds
+                
+            }
+            
+            function RealTimeView(id) {
+                 var toSend =
+                {
+                    id: id
+                };
+                $('#spinner').show();
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("ViewData","TankMovements")",
+                    dataType: "json",
+                    data: toSend,
+                    success: function (res) {
+                        if (res.isValid) {
+                            var data = res.data;
+                            $("#md-name").text(data.name);
+                            if (data.tankMovement.status) {
+                                $("#md-status").text("OPEN");
+                            }
+                            else {
+                                $("#md-status").text("CLOSE");
+                            }
+                            $('#spinner').hide();
+                            $("#md-safelevel").text(data.heightSafeCapacity);
+                            $("#md-flowrate").text(data.tankLiveData.flowRateKLperH);
+                            $("#md-estimated").text(data.tankMovement.estimationTimeStamp);
+                            $("#modal-view").modal();
+                            $("#modal-view .modal-title").html('View Time estimation');
+                            $("#modal-view").modal('show');
+                        }
+                       
+                    },
+                    error: function (res) {
+                    }
+                })
+            }
+           
+        </script>
+      
+     
+    }
+</head>
+
+<!-- Begin Page Content -->
+<div class="container-fluid" style="width: 100%;">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Tank Movement</h1>
+        <a value="reload" onclick="document.location.reload(true)" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
+            <i class="fas fa-redo-alt"></i>
+        </a>
+    </div>
+
+    <!-- Submain Content -->
+    <div class="card shadow-lg rounded" style="font-size:12px;">
+        <div class="card-header bg-gradient-info"></div>
+        <div class="card-body">
+
+            <!-- Tank Filter -->
+            <form>
+            </form>
+            <!-- End Tank Filter -->
+            <!-- Divider -->
+            <hr class="sidebar-divider my-3">
+
+            <!-- Tank Table -->
+            @await Html.PartialAsync("_ViewAll", Model)
+            <!-- End Tank table -->
+
+        </div>
+    </div>
+    <!-- End Submain Content -->
+
+</div>
+<!-- End Page Content -->
+<!-- Modal calculation -->
+<div class="modal fade" id="modal-view" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Edit Data</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-borderless table-sm">
+                    <tbody>
+                        <tr>
+                            <th scope="row" style="padding: 4px;">TANK NAME</th>
+                            <td style="padding: 8px;"> : </td>
+                            <td id="md-name" style="padding: 8px;">&tilde;</td>
+                            <th scope="row" style="padding: 4px;">STATUS</th>
+                            <td style="padding: 4px;"> : </td>
+                            <td id="md-status" style="padding: 8px;">&tilde;</td>
+                        </tr>
+                        <tr>
+                            <th scope="row" style="padding: 4px;">SAFE LEVEL</th>
+                            <td style="padding: 8px;"> : </td>
+                            <td id="md-safelevel" style="padding: 8px;">&tilde;</td>
+                            <th scope="row" style="padding: 4px;">FLOWRATE(KL/H)</th>
+                            <td style="padding: 4px;"> : </td>
+                            <td id="md-flowrate" style="padding: 8px;">&tilde;</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+                <hr>
+                <div class="form-group">
+                        <div class="form-group row">
+                            <div class="col-sm-10 mb-3 mb-sm-0">
+                                <label class="control-label">ESTIMATED TIME :</label>
+                            </div>
+                            <div class="col-sm-2 mb-3 mb-sm-0">
+                                <i id="iconAlarm" class='fas fa-bell' style="font-size: 25px;"></i>
+                            </div>
+                        </div>
+                        <div class="text-center" style="font-size: 50px;" id="md-estimated"></div>
+                    </div>
+              </div>
+         </div>
+    </div>
+</div>

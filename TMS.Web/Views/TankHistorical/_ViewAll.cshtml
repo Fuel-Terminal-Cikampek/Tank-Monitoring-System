@@ -1,0 +1,46 @@
+@model TMS.Models.TankHistorical
+    <!-- Tank Table -->
+<div class="table-responsive">
+    <table id="tb-tankhistorical" class="table table-striped table-bordered dt-responsive nowrap" width="100%" cellspacing="0" style="font-size:1.5em; color:black; font-weight:600;">
+        <thead>
+            <tr>
+                <th>TANK</th>
+                <th>PRODUCT</th>
+                <th>
+                    @Html.DisplayNameFor(model => model.TimeStamp)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Level)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Level_Water)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Temperature)
+                </th>
+                <th>
+                    TEST TEMP
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Density)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Volume_Obs)
+                </th>
+                <th>
+                    PUMP PAMBLE
+                </th>
+                <th>
+                    ULLAGE
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Flowrate)
+                </th>
+                <th>
+                    STATUS
+                </th>
+            </tr>
+        </thead>
+    </table>
+</div>
+<!-- End Tank table -->

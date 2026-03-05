@@ -1,0 +1,66 @@
+.table {
+    border: 2px solid rgba(0, 0, 0, 0.5);
+    text-align: center !important;
+}
+
+.table th, .table td {
+    border: 2px solid rgba(0, 0, 0, 0.5);
+}
+
+.table thead th {
+    border: 2px solid rgba(0, 0, 0, 0.5); /* Change to your desired color */
+}
+
+.form-control {
+    color: rgba(0,0,0,0.8);
+    font-weight: 600;
+}
+.form-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dua kolom dengan ukuran yang sama */
+    gap: 10px; /* Jarak antara kolom */
+}
+
+.bordered-form {
+    border: 1px solid #ccc; /* Tambahkan border dengan warna abu-abu */
+    padding: 20px; /* Berikan sedikit padding untuk memberikan ruang antara konten dan border */
+    border-radius: 5px; /* Agar tampilan border terlihat lebih lembut */
+}
+
+.large-checkbox .form-check-input {
+    width: 1.5em;
+    height: 1.5em;
+}
+.control-label {
+    color: black;
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.form-control {
+    color: black;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.custom-select {
+    color: black;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+.dataTables_wrapper {
+    position: relative;
+}
+
+div.dataTables_processing {
+    top: 0;
+    left: 50%;
+    width: 100%;
+    text-align: center;
+    margin-top: -4.5rem;
+    position: absolute;
+    color: #000;
+    font-size: 2rem;
+    font-weight:800;
+    background-color:white;
+}

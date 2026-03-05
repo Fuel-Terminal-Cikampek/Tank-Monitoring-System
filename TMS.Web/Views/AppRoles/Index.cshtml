@@ -1,0 +1,271 @@
+﻿@model TMS.Web.Models.AppRole
+@using TMS.Web.Authorization
+
+@{
+    ViewData["Title"] = "Roles Configuration";
+    Layout = "~/Views/Shared/_LayoutNew.cshtml";
+}
+
+<head>
+    <style>
+        /* ✅ Fix: Tabel muat dalam satu tampilan tanpa scroll untuk 10 entries */
+        #tb-appRole {
+            width: 100% !important;
+            table-layout: fixed;
+        }
+        
+        #tb-appRole thead th,
+        #tb-appRole tbody td {
+            text-align: center;
+            vertical-align: middle;
+            padding: 8px 10px;
+        }
+        
+        /* ✅ Fix: Action column align center */
+        #tb-appRole thead th:nth-child(1),
+        #tb-appRole tbody td:nth-child(1) {
+            text-align: center;
+            width: 180px;
+        }
+        
+        /* ✅ Remove horizontal scroll untuk 10 entries */
+        .dataTables_wrapper {
+            overflow-x: visible !important;
+        }
+        
+        #tb-appRole_wrapper .dataTables_scrollBody {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+        
+        /* ✅ DataTables scroll hanya muncul jika entries > 10 */
+        .dataTables_scrollBody {
+            max-height: none !important;
+        }
+        
+        /* ✅ Button styling */
+        #tb-appRole .btn {
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            margin: 2px;
+        }
+    </style>
+    
+    @section Scripts{
+        <script type="text/javascript" asp-append-version="true">
+            // ✅ Check if current user can modify data (admin only)
+            var canModifyData = @Json.Serialize(User.CanModifyData());
+
+            var oTable;
+            // ✅ SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+            jQuery(document).ready(function ($) {
+                oTable = $('#tb-appRole').DataTable({
+                    "serverSide": true,
+                    "scrollX": false,           // ✅ Disable horizontal scroll
+                    "scrollY": false,           // ✅ Disable vertical scroll untuk 10 entries
+                    "autoWidth": false,         // ✅ Disable auto width
+                    "paging": true,
+                    "pageLength": 10,           // ✅ Default 10 entries
+                    "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                    "ordering": true,
+                    "info": true,               // ✅ Keep "Showing x to xx of xx entries"
+                    "searching": true,
+                    "ajax": {
+                        "url": "@Url.Action("LoadData")",
+                        "type": "POST",
+                        "datatype": "json"
+                    },
+                    "columnDefs": [
+                        {
+                            "targets": 0,       // Id column
+                            "visible": false,
+                            "searchable": false
+                        },
+                        {
+                            "targets": 1,       // Action column
+                            "orderable": false,
+                            "width": "180px"
+                        },
+                        {
+                            "targets": 2,       // Role Name
+                            "width": "200px"
+                        },
+                        {
+                            "targets": 3,       // Create By
+                            "width": "150px"
+                        },
+                        {
+                            "targets": 4,       // Datetime Create
+                            "width": "180px"
+                        }
+                    ],
+                    "columns": [
+                        { "data": "id", "name": "Id" },
+                        {
+                            "data": null,
+                            "render": function (data, type, full, meta) {
+                                var edit = canModifyData ? 
+                                    "<button type='button' class='btn btn-warning btn-sm' onclick=\"UpdateData('" + full.id + "');\"><i class='fas fa-edit'></i> Edit</button> " : "";
+                                var del = canModifyData ? 
+                                    "<button type='button' class='btn btn-danger btn-sm' onclick=\"DeleteData('" + full.id + "');\"><i class='fas fa-trash-alt'></i> Delete</button>" : "";
+                                return edit + del;
+                            }
+                        },
+                        { "data": "name", "name": "Name" },
+                        { "data": "createBy", "name": "CreateBy" },
+                        {
+                            "data": "createTime",
+                            "render": function (value) {
+                                if (value === null) return "";
+                                return moment(value).format('DD MMM YYYY HH:mm');
+                            },
+                            "name": "CreateTime"
+                        }
+                    ],
+                    // ✅ Callback setelah draw - handle scroll berdasarkan jumlah entries
+                    "drawCallback": function(settings) {
+                        var api = this.api();
+                        var pageLength = api.page.len();
+                        var wrapper = $(api.table().container());
+                        
+                        // Jika entries <= 10, tidak perlu scroll
+                        // Jika entries > 10, tampilkan scroll
+                        if (pageLength > 10) {
+                            wrapper.find('.dataTables_scrollBody').css('max-height', '500px');
+                            wrapper.find('.dataTables_scrollBody').css('overflow-y', 'auto');
+                        } else {
+                            wrapper.find('.dataTables_scrollBody').css('max-height', 'none');
+                            wrapper.find('.dataTables_scrollBody').css('overflow-y', 'visible');
+                        }
+                    }
+                });
+                
+                // ✅ Handle page length change - enable scroll jika > 10
+                $('#tb-appRole').on('length.dt', function(e, settings, len) {
+                    if (len > 10) {
+                        oTable.settings()[0].oScroll.sY = "500px";
+                    } else {
+                        oTable.settings()[0].oScroll.sY = "";
+                    }
+                });
+            });
+            
+            function UpdateData(RoleId) {
+                var $ = jQuery;
+                var toSend = { id: RoleId };
+                $.ajax({
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "@Url.Action("AddOrEdit")",
+                    data: toSend,
+                    success: function (res) {
+                        $("#form-modal .modal-body").html(res);
+                        $("#form-modal .modal-title").html('Edit Role');
+                        $('#form-modal').modal('show');
+                    },
+                    error: function (res) {
+                        console.error("Error loading edit form:", res);
+                    }
+                });
+            }
+            
+            function DeleteData(Id) {
+                if (confirm('Are you sure want to delete this role?')) {
+                    var $ = jQuery;
+                    var toSend = { id: Id };
+                    $.ajax({
+                        type: "POST",
+                        url: "@Url.Action("Delete")",
+                        data: toSend,
+                        success: function(res) {
+                            oTable.ajax.reload(null, false);
+                        },
+                        error: function (err) {
+                            console.error("Error deleting role:", err);
+                        }
+                    });
+                }
+            }
+            
+            function reloadTable() {
+                oTable.ajax.reload(null, false);
+            }
+            
+            function reset() {
+                document.getElementById("Name").value = "";
+                document.getElementById("ConcurrencyStamp").value = "";
+                reloadTable();
+            }
+        </script>
+    }
+</head>
+
+<!-- Begin Page Content -->
+<div class="container-fluid">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">User Role</h1>
+        <a value="reload" onclick="reloadTable()" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
+            <i class="fas fa-redo-alt"></i>
+        </a>
+    </div>
+
+    <!-- Submain Content -->
+    <div class="card shadow-lg rounded" style="width: 100%;">
+        <div class="card-header bg-gradient-info"></div>
+        <div class="card-body">
+
+            <!-- Roles Filter -->
+            <form>
+                <div class="form-row">
+                    <div class="col-md-2">
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fab fa-slack-hash"></i></span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Name" aria-label="Name" id="Name" />
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fab fa-slack-hash"></i></span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="ConcurrencyStamp" aria-label="ConcurrencyStamp" id="ConcurrencyStamp" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group mb-1">
+                            <button type="reset" class="btn btn-primary" style="width: 100%;" onclick="reset()">
+                                <i class="fas fa-undo-alt"></i> Reset Filter
+                            </button>
+                        </div>
+                    </div>
+                    @if (User.CanModifyData())
+                    {
+                        <div class="col-md-3">
+                            <div class="input-group mb-1">
+                                <button type="button" class="btn btn-primary" style="width: 100%;" 
+                                        onclick="showInPopup('@Url.Action("AddOrEdit","AppRoles", null, Context.Request.Scheme)','Add New Role')">
+                                    <i class="fas fa-plus"></i> New
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </form>
+
+            <!-- End Roles Filter -->
+            <!-- Divider -->
+            <hr class="sidebar-divider my-3" />
+
+            <!-- Role Table -->
+            @await Html.PartialAsync("_ViewAll", Model)
+
+            <!-- End Role table -->
+        </div>
+    </div>
+    <!-- End Submain Content -->
+</div>
+<!-- End Page Content -->

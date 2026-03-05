@@ -1,0 +1,141 @@
+﻿@model TMS.Models.EditTankTicket
+
+@{
+    ViewData["Title"] = "AddOrEdit";
+    Layout = null;
+}
+<script>
+    var date, time;
+
+    // Custom filtering function which will search data in column four between two values
+    // ✅ SAFEGUARD: Use jQuery(document).ready(function($) {}) pattern
+    jQuery(document).ready(function ($) {
+        // Create date inputs
+        date = new DateTime($('#date'), {
+            format: 'D MMM YYYY'
+        });
+        date = new DateTime($('#time'), {
+            format: 'HH:mm'
+        });
+    });
+    //get data Tank by Id
+    function loadData() {
+        var id = document.getElementById("Tank_Id").value;
+        var timerequest = document.getElementById("date").value + " " + document.getElementById("time").value;
+        if (id != 0) {
+            GetDataEdit(id, timerequest);
+        }
+    }
+</script>
+<form asp-action="EditTankTicket" asp-route-id="@Model.Ticket_ID" onsubmit="return jQueryAjaxPost(this);" autocomplete="off" style="font-size:1.5rem">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Ticket_ID" />
+    <input type="hidden" asp-for="Tank_Id" id="Tank_Id" />
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Tank_Id" class="control-label"></label>
+            <select disabled asp-for="Tank_Id" class="custom-select" asp-items=@(new SelectList(ViewBag.TankId,"Tank_Name","Tank_Name"))></select>
+            <span asp-validation-for="Tank_Id" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="Ticket_Number" class="control-label"></label>
+            <input disabled asp-for="Ticket_Number" class="form-control" />
+            <span asp-validation-for="Ticket_Number" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Shipment_Id" class="control-label"></label>
+            <input disabled asp-for="Shipment_Id" class="form-control" />
+            <span asp-validation-for="Shipment_Id" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="Do_Number" class="control-label"></label>
+            <input disabled asp-for="Do_Number" class="form-control" />
+            <span asp-validation-for="Do_Number" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="Operation_Type" class="control-label"></label>
+            <select disabled asp-for="Operation_Type" class="custom-select" asp-items=@(new SelectList(ViewBag.ticketTypes,"Operation","Description"))>
+            </select>
+            <span asp-validation-for="Operation_Type" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="Operation_Status" class="control-label"></label>
+            <select disabled asp-for="Operation_Status" class="custom-select">
+                <option selected>Choose...</option>
+                <option value=1>Open</option>
+                <option value=2>Close</option>
+            </select>
+            <span asp-validation-for="Operation_Status" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-6">
+            <label class="control-label">DATE</label>
+            <input asp-for="Date" type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="date" value="@DateTime.Now.ToString("dd MMM yyyy")" />
+            <span asp-validation-for="Date" class="text-danger"></span>
+        </div>
+        <div class="col-sm-4">
+            <label class="control-label">TIME</label>
+            <div class="row">
+                <div class="col-md-10">
+                    <input asp-for="Time" type="text" class="form-control" aria-label="Date-time" aria-describedby="date-time" id="time" style="width:90%" value="@DateTime.Now.ToString("HH:mm")" />
+                </div>
+                <div class="col-md-2">
+                    <div class="col-md-2">
+                        <a onclick="loadData()" class="btn btn-success btn-circle">
+                            <i class="fas fa-refresh"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <span asp-validation-for="Time" class="text-danger"></span>
+        </div>
+
+    </div>
+    <hr />
+    @*value tank ticket*@
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="LiquidLevel" class="control-label"></label>
+            <input id="edlevel" asp-for="LiquidLevel" class="form-control" />
+            <span asp-validation-for="LiquidLevel" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="WaterLevel" class="control-label"></label>
+            <input id="edwater" asp-for="WaterLevel" class="form-control" />
+            <span asp-validation-for="WaterLevel" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <label asp-for="LiquidTemperature" class="control-label"></label>
+            <input id="edtemperature" asp-for="LiquidTemperature" class="form-control" />
+            <span asp-validation-for="LiquidTemperature" class="text-danger"></span>
+        </div>
+        <div class="col-sm-6 mb-sm-0">
+            <label asp-for="TestTemperature" class="control-label"></label>
+            <input id="edtestTemperature" asp-for="TestTemperature" class="form-control" />
+            <span asp-validation-for="TestTemperature" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="LiquidDensity" class="control-label"></label>
+        <input id="eddensity" asp-for="LiquidDensity" class="form-control" />
+        <span asp-validation-for="LiquidDensity" class="text-danger"></span>
+    </div>
+
+    <div class="form-group col text-center mt-lg-5">
+        <button type="submit" class="btn btn-success" style="width:50%">Save changes</button>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

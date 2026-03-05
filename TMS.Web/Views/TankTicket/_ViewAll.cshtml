@@ -1,0 +1,60 @@
+﻿@model TMS.Models.TankTicket
+
+<!-- Tank Table -->
+<div class="table-responsive">
+    <table id="tb-tankticket" class="table table-striped table-bordered dt-responsive nowrap" width="100%" cellspacing="0" style="font-size:1.5rem; color:black;font-weight:800;">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.Id)
+                </th>
+                <th>ACTION</th>
+                <th>
+                    TANK NUMBER
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Ticket_Number)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Timestamp)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Operation_Type)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Operation_Status)
+                </th>
+                @* <th>
+                    @Html.DisplayNameFor(model => model.Measurement_Method)
+                </th> *@
+                <th>
+                    @Html.DisplayNameFor(model => model.LiquidLevel)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.WaterLevel)
+                </th>
+                <th>
+                    MAT. TEMP
+                </th>
+
+                <th>
+                    TEST TEMP
+                </th>
+
+                <th>
+                    @Html.DisplayNameFor(model => model.LiquidDensity)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.SAP_Response)
+                </th>
+            </tr>
+        </thead>
+    </table>
+    <!-- Button trigger -->
+    <!--<div class="btn-group" role="group" aria-label="Basic example">
+        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#modalEdit"><i class="fas fa-edit"></i></button>
+        <button type="button" class="btn btn-success"><i class="fas fa-upload"></i></button>
+        <button type="button" class="btn btn-primary"><i class="fas fa-print"></i></button>
+        <button type="button" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
+    </div>-->
+</div>

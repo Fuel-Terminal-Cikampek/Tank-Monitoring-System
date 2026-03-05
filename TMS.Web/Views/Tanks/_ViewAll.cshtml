@@ -1,0 +1,80 @@
+﻿@model TMS.Models.Tank
+
+
+<!-- Tank Table -->
+<div class="table-responsive">
+    <table id="tb-tank" class="table table-striped table-bordered dt-responsive nowrap" cellspacing="0" style="font-size:1.5rem; color:black;font-weight:800;">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.TankId)
+                </th>
+                <th>Action</th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Tank_Name)
+                </th>
+                <th>
+                    PRODUCT
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.TankVolume)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Tank_Height)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Tank_Diameter)
+                </th>
+
+                <th>
+                    @Html.DisplayNameFor(model => model.Tape)
+                </th>
+
+                <th>
+                    @Html.DisplayNameFor(model => model.Bob)
+                </th>
+
+                <th>
+                    @Html.DisplayNameFor(model => model.Blank)
+                </th>
+
+                @* <th>
+                    @Html.DisplayNameFor(model => model.IsUsed)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.IsAutoPI)
+                </th> *@
+                @* <th>
+                    @Html.DisplayNameFor(model => model.IsManualLevel)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ManualLevel)
+                </th> *@
+                <th>
+                    @Html.DisplayNameFor(model => model.IsManualWaterLevel)
+                </th>
+                @*<th>
+                    @Html.DisplayNameFor(model => model.ManualWaterLevel)
+                </th>*@
+                <th>
+                    @Html.DisplayNameFor(model => model.IsManualDensity)
+                </th>
+                @*<th>
+                    @Html.DisplayNameFor(model => model.ManualLabDensity)
+                </th>*@
+                <th>
+                    @Html.DisplayNameFor(model => model.IsManualTemp)
+                </th>
+                @*<th>
+                    @Html.DisplayNameFor(model => model.ManualTemp)
+                </th>*@
+                <th>
+                    @Html.DisplayNameFor(model => model.IsManualTestTemp)
+                </th>
+                @*<th>
+                    @Html.DisplayNameFor(model => model.ManualTestTemp)
+                </th>*@
+            </tr>
+        </thead>
+    </table>
+</div>
